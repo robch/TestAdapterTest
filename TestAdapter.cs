@@ -14,8 +14,8 @@ namespace TestAdapterTest
 {
     public class TestAdapter
     {
-        public const string FileExtension1 = ".dll";
-        public const string FileExtension2 = ".yaml";
+        public const string FileExtensionDll = ".dll";
+        public const string FileExtensionYaml = ".yaml";
         public const string Executor = "executor://robch/v1";
         public static Uri ExecutorUri = new Uri(Executor);
 
@@ -38,7 +38,11 @@ namespace TestAdapterTest
         public static IEnumerable<TestCase> GetTestsFromFile(string source)
         {
             var file = new FileInfo(source);
-            return GetTestsFromYaml(file);
+            Log($"{file.FullName}, Extension={file.Extension}");
+
+            return file.Extension.Trim('.') == FileExtensionYaml.Trim('.')
+                ? GetTestsFromYaml(file)
+                : GetTestsFromDirectory(file.Directory);
         }
 
         public static void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
@@ -49,9 +53,20 @@ namespace TestAdapterTest
             }
         }
 
+        private static IEnumerable<TestCase> GetTestsFromDirectory(DirectoryInfo directory)
+        {
+            foreach (var file in directory.GetFiles($"*{FileExtensionYaml}"))
+            {
+                foreach (var test in GetTestsFromYaml(file))
+                {
+                    yield return test;
+                }
+            }
+        }
+
         private static IEnumerable<TestCase> GetTestsFromYaml(FileInfo file)
         {
-            var name = file.FullName.Remove(file.FullName.LastIndexOf(FileExtension1)).Replace(" ", "");
+            var name = file.FullName.Remove(file.FullName.LastIndexOf(file.Extension)).Replace(" ", "").Trim('.');
             var parts = name.Split(":/\\".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             var tailParts = parts.Reverse().Take(5).Reverse();
             var prefix = string.Join(".", tailParts);

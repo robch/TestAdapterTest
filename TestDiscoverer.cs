@@ -12,8 +12,8 @@ using System.Threading.Tasks;
 
 namespace TestAdapterTest
 {
-    [FileExtension(TestAdapter.FileExtension1)]
-    [FileExtension(TestAdapter.FileExtension2)]
+    [FileExtension(TestAdapter.FileExtensionDll)]
+    [FileExtension(TestAdapter.FileExtensionYaml)]
     [DefaultExecutorUri(TestAdapter.Executor)]
     public class TestDiscoverer : ITestDiscoverer
     {
