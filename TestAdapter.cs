@@ -40,7 +40,7 @@ namespace TestAdapterTest
             var file = new FileInfo(source);
             Log($"{file.FullName}, Extension={file.Extension}");
 
-            return file.Extension.Trim('.') == FileExtensionYaml.Trim('.')
+            return file.Extension.Trim('.') == FileExtensionYaml.Trim('.') // || true
                 ? GetTestsFromYaml(file)
                 : GetTestsFromDirectory(file.Directory);
         }
@@ -71,9 +71,9 @@ namespace TestAdapterTest
             var tailParts = parts.Reverse().Take(5).Reverse();
             var prefix = string.Join(".", tailParts);
 
-            yield return new TestCase($"{prefix}.Test1", ExecutorUri, file.FullName);
-            yield return new TestCase($"{prefix}.Test2", ExecutorUri, file.FullName);
-            yield return new TestCase($"{prefix}.Test3", ExecutorUri, file.FullName);
+            yield return new TestCase($"{prefix}.Test1", ExecutorUri, file.FullName) { CodeFilePath = file.FullName, LineNumber = 1 };
+            yield return new TestCase($"{prefix}.Test2", ExecutorUri, file.FullName) { CodeFilePath = file.FullName, LineNumber = 2 };
+            yield return new TestCase($"{prefix}.Test3", ExecutorUri, file.FullName) { CodeFilePath = file.FullName, LineNumber = 3 };
         }
 
         private static void RunTest(TestCase test, IRunContext runContext, IFrameworkHandle frameworkHandle)
