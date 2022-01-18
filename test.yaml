@@ -4,5 +4,10 @@
     SPX
     HELP
 
-- name: simple synthesis test
-  command: spx synthesize --text Hello --audio output hello.wav
+- name: simple RECO test
+  command: spx recognize --file https://crbn.us/whatstheweatherlike.wav 
+  expect: |
+    RECOGNIZED: What's the weather like?
+  log-expect: |
+    path:.*turn.start
+    path:.*turn.end

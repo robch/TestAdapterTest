@@ -12,13 +12,14 @@ using System.Threading.Tasks;
 
 namespace TestAdapterTest
 {
-    [FileExtension(TestAdapter.FileExtensionDll)]
     [FileExtension(TestAdapter.FileExtensionYaml)]
+    [FileExtension(TestAdapter.FileExtensionDll)]
     [DefaultExecutorUri(TestAdapter.Executor)]
     public class TestDiscoverer : ITestDiscoverer
     {
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
+            TestAdapter.Log(logger);
             TestAdapter.Log($"TestDiscoverer.DiscoverTests(): ENTER");
             TestAdapter.Log($"TestDiscoverer.DiscoverTests(): count={sources.Count()}");
             foreach (var test in TestAdapter.GetTestsFromFiles(sources))

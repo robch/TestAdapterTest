@@ -18,6 +18,7 @@ namespace TestAdapterTest
 
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
+            TestAdapter.Log(frameworkHandle);
             TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): ENTER");
             TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): count={tests.Count()}");
             TestAdapter.RunTests(tests, runContext, frameworkHandle);
@@ -26,6 +27,7 @@ namespace TestAdapterTest
 
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
+            TestAdapter.Log(frameworkHandle);
             TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<string>(): ENTER");
             TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<string>(): count={sources.Count()}");
             RunTests(TestAdapter.GetTestsFromFiles(sources), runContext, frameworkHandle);

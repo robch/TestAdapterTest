@@ -19,9 +19,15 @@ namespace TestAdapterTest
         public const string Executor = "executor://robch/v1";
         public static Uri ExecutorUri = new Uri(Executor);
 
+        public static void Log(IMessageLogger logger)
+        {
+            TestAdapter.logger = logger;
+        }
+
         public static void Log(string text)
         {
             File.AppendAllText("log", $"{DateTime.Now}: {text}\n");
+            logger?.SendMessage(TestMessageLevel.Informational, $"{DateTime.Now}: {text}");
         }
 
         public static IEnumerable<TestCase> GetTestsFromFiles(IEnumerable<string> sources)
@@ -37,12 +43,15 @@ namespace TestAdapterTest
 
         public static IEnumerable<TestCase> GetTestsFromFile(string source)
         {
-            var file = new FileInfo(source);
-            Log($"{file.FullName}, Extension={file.Extension}");
+            Debugger.Launch();
+            Log($"TestAdapter::GetTestsFromFile('{source}')");
 
-            return file.Extension.Trim('.') == FileExtensionYaml.Trim('.') // || true
-                ? GetTestsFromYaml(file)
-                : GetTestsFromDirectory(file.Directory);
+            var file = new FileInfo(source);
+            Log($"TestAdapter::GetTestsFromFile('{source}'): Extension={file.Extension}");
+
+            return file.Extension.Trim('.') == FileExtensionYaml.Trim('.')
+                ? GetTestsFromYaml(source, file)
+                : GetTestsFromDirectory(source, file.Directory);
         }
 
         public static void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
@@ -53,27 +62,31 @@ namespace TestAdapterTest
             }
         }
 
-        private static IEnumerable<TestCase> GetTestsFromDirectory(DirectoryInfo directory)
+        private static IEnumerable<TestCase> GetTestsFromDirectory(string source, DirectoryInfo directory)
         {
             foreach (var file in directory.GetFiles($"*{FileExtensionYaml}"))
             {
-                foreach (var test in GetTestsFromYaml(file))
+                foreach (var test in GetTestsFromYaml(source, file))
                 {
                     yield return test;
                 }
             }
         }
 
-        private static IEnumerable<TestCase> GetTestsFromYaml(FileInfo file)
+        private static IEnumerable<TestCase> GetTestsFromYaml(string source, FileInfo file)
         {
+            Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): ENTER");
+
             var name = file.FullName.Remove(file.FullName.LastIndexOf(file.Extension)).Replace(" ", "").Trim('.');
             var parts = name.Split(":/\\".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             var tailParts = parts.Reverse().Take(5).Reverse();
             var prefix = string.Join(".", tailParts);
 
-            yield return new TestCase($"{prefix}.Test1", ExecutorUri, file.FullName) { CodeFilePath = file.FullName, LineNumber = 1 };
-            yield return new TestCase($"{prefix}.Test2", ExecutorUri, file.FullName) { CodeFilePath = file.FullName, LineNumber = 2 };
-            yield return new TestCase($"{prefix}.Test3", ExecutorUri, file.FullName) { CodeFilePath = file.FullName, LineNumber = 3 };
+            yield return new TestCase($"{prefix}.Test1", ExecutorUri, source) { CodeFilePath = file.FullName, LineNumber = 1 };
+            yield return new TestCase($"{prefix}.Test2", ExecutorUri, source) { CodeFilePath = file.FullName, LineNumber = 2 };
+            yield return new TestCase($"{prefix}.Test3", ExecutorUri, source) { CodeFilePath = file.FullName, LineNumber = 3 };
+
+            Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
         }
 
         private static void RunTest(TestCase test, IRunContext runContext, IFrameworkHandle frameworkHandle)
@@ -93,5 +106,6 @@ namespace TestAdapterTest
             frameworkHandle.RecordEnd(test, outcome);
         }
 
+        private static IMessageLogger logger = null;
     }
 }
