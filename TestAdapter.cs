@@ -43,7 +43,6 @@ namespace TestAdapterTest
 
         public static IEnumerable<TestCase> GetTestsFromFile(string source)
         {
-            Debugger.Launch();
             Log($"TestAdapter::GetTestsFromFile('{source}')");
 
             var file = new FileInfo(source);
