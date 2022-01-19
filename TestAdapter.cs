@@ -17,7 +17,6 @@ namespace TestAdapterTest
         public const string FileExtensionDll = ".dll";
         public const string FileExtensionYaml = ".yaml";
         public const string Executor = "executor://robch/v1";
-        public static Uri ExecutorUri = new Uri(Executor);
 
         public static void Log(IMessageLogger logger)
         {
@@ -101,7 +100,7 @@ namespace TestAdapterTest
 
         private static void TestEnd(TestCase test, IFrameworkHandle frameworkHandle, TestOutcome outcome)
         {
-            TestAdapter.Log($"TestAdapter.TestEnd({test.DisplayName}): RecordEnd");
+            TestAdapter.Log($"TestAdapter.TestEnd({test.DisplayName})");
             frameworkHandle.RecordEnd(test, outcome);
         }
 
@@ -110,10 +109,14 @@ namespace TestAdapterTest
             TestAdapter.Log($"TestAdapter.TestRunAndRecord({test.DisplayName})");
 
             var outcome = test.DisplayName.Contains("2") ? TestOutcome.Failed : TestOutcome.Passed;
-            frameworkHandle.RecordResult(new TestResult(test)
-            {
-                Outcome = outcome
-            });
+
+            var result = new TestResult(test) { Outcome = outcome };
+            result.Messages.Add(new TestResultMessage(TestResultMessage.StandardOutCategory, "STDOUT stuff goes here!!"));
+            result.Messages.Add(new TestResultMessage(TestResultMessage.StandardErrorCategory, "STDERR stuff goes here!!"));
+            result.Messages.Add(new TestResultMessage(TestResultMessage.AdditionalInfoCategory, "ADDITIONAL-INFO stuff goes here!!"));
+            result.Messages.Add(new TestResultMessage(TestResultMessage.DebugTraceCategory, "DEBUG-TRACE stuff goes here!!"));
+
+            frameworkHandle.RecordResult(result);
             return outcome;
         }
 
