@@ -38,7 +38,13 @@ namespace TestAdapterTest
             stdErr = "STDERR";
             additional = "ADDITIONAL-INFO";
             debugTrace = "DEBUG-TRACE";
+
             outcome = test.DisplayName.Contains("2") ? TestOutcome.Failed : TestOutcome.Passed;
+            if (outcome == TestOutcome.Passed)
+            {
+                stdErr = null;
+                debugTrace = null;
+            }
         }
 
         private static void RecordResult(TestCase test, IFrameworkHandle frameworkHandle, string stdOut, string stdErr, string additional, string debugTrace, TestOutcome outcome)
