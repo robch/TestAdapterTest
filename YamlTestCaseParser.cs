@@ -36,7 +36,7 @@ namespace TestAdapterTest
         {
             string fullName = GetTestCaseFullName(source, file, mapping);
 
-            TestAdapter.Log($"YamlTestParser::GetTests(): new TestCase('{fullName}')");
+            Logger.Log($"YamlTestParser::GetTests(): new TestCase('{fullName}')");
             var test = new TestCase(fullName, new Uri(TestAdapter.Executor), source)
             {
                 CodeFilePath = file.FullName,

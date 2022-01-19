@@ -13,7 +13,7 @@ namespace TestAdapterTest
     {
         public static void Set(TestCase test, string name, string value)
         {
-            TestAdapter.Log($"TestCaseProperties.Set('{name}'='{value.Replace("\n", "\\n")}')");
+            Logger.Log($"TestCaseProperties.Set('{name}'='{value.Replace("\n", "\\n")}')");
             if (!string.IsNullOrEmpty(value))
             {
                 var property = properties[name];
@@ -23,10 +23,10 @@ namespace TestAdapterTest
 
         public static string Get(TestCase test, string name, string defaultValue = null)
         {
-            TestAdapter.Log($"TestCaseProperties.Get('{name}')");
+            Logger.Log($"TestCaseProperties.Get('{name}')");
 
             var value = test.GetPropertyValue(properties[name], defaultValue);
-            TestAdapter.Log($"TestCaseProperties.Get('{name}') = '{value?.Replace("\n", "\\n")}'");
+            Logger.Log($"TestCaseProperties.Get('{name}') = '{value?.Replace("\n", "\\n")}'");
 
             return value;
         }

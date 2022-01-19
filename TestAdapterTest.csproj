@@ -65,6 +65,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logger.cs" />
     <Compile Include="TestAdapter.cs" />
     <Compile Include="TestCaseProperties.cs" />
     <Compile Include="TestExecutor.cs" />

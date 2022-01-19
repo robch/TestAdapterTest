@@ -17,25 +17,25 @@ namespace TestAdapterTest
     {
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            TestAdapter.Log(frameworkHandle);
-            TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): ENTER");
-            TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): count={tests.Count()}");
+            Logger.Log(frameworkHandle);
+            Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): ENTER");
+            Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): count={tests.Count()}");
             TestAdapter.RunTests(tests, runContext, frameworkHandle);
-            TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): EXIT");
+            Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): EXIT");
         }
 
         public void RunTests(IEnumerable<string> sources, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            TestAdapter.Log(frameworkHandle);
-            TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<string>(): ENTER");
-            TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<string>(): count={sources.Count()}");
+            Logger.Log(frameworkHandle);
+            Logger.Log($"TextExecutor.RunTests(IEnumerable<string>(): ENTER");
+            Logger.Log($"TextExecutor.RunTests(IEnumerable<string>(): count={sources.Count()}");
             RunTests(TestAdapter.GetTestsFromFiles(sources), runContext, frameworkHandle);
-            TestAdapter.Log($"TextExecutor.RunTests(IEnumerable<string>(): EXIT");
+            Logger.Log($"TextExecutor.RunTests(IEnumerable<string>(): EXIT");
         }
 
         public void Cancel()
         {
-            TestAdapter.Log($"TextExecutor.Cancel(): ENTER/EXIT");
+            Logger.Log($"TextExecutor.Cancel(): ENTER/EXIT");
         }
     }
 }

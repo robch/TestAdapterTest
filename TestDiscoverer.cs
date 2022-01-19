@@ -19,14 +19,14 @@ namespace TestAdapterTest
     {
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
         {
-            TestAdapter.Log(logger);
-            TestAdapter.Log($"TestDiscoverer.DiscoverTests(): ENTER");
-            TestAdapter.Log($"TestDiscoverer.DiscoverTests(): count={sources.Count()}");
+            Logger.Log(logger);
+            Logger.Log($"TestDiscoverer.DiscoverTests(): ENTER");
+            Logger.Log($"TestDiscoverer.DiscoverTests(): count={sources.Count()}");
             foreach (var test in TestAdapter.GetTestsFromFiles(sources))
             {
                 discoverySink.SendTestCase(test);
             }
-            TestAdapter.Log($"TestDiscoverer.DiscoverTests(): EXIT");
+            Logger.Log($"TestDiscoverer.DiscoverTests(): EXIT");
         }
     }
 }
