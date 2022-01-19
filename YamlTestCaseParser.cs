@@ -55,24 +55,6 @@ namespace TestAdapterTest
             return test;
         }
 
-        private static void SetTestCaseProperty(TestCase test, string propertyName, YamlMappingNode mapping, string mappingName)
-        {
-            Debugger.Launch();
-
-            var ok = mapping.Children.ContainsKey(mappingName);
-            if (!ok) return;
-
-            var node = mapping.Children[mappingName] as YamlScalarNode;
-            var value = node?.Value;
-
-            if (!string.IsNullOrEmpty(value))
-            {
-                var property = properties[propertyName];
-                test.SetPropertyValue(property, value);
-                TestAdapter.Log($"SetTestCaseProperty('{propertyName}'='{value}'");
-            }
-        }
-
         private static string GetTestCaseName(YamlMappingNode mapping)
         {
             var nameNode = mapping.Children?["name"] as YamlScalarNode;
@@ -89,6 +71,21 @@ namespace TestAdapterTest
             return prefix;
         }
 
+        private static void SetTestCaseProperty(TestCase test, string propertyName, YamlMappingNode mapping, string mappingName)
+        {
+            var ok = mapping.Children.ContainsKey(mappingName);
+            if (!ok) return;
+
+            var node = mapping.Children[mappingName] as YamlScalarNode;
+            var value = node?.Value;
+
+            if (!string.IsNullOrEmpty(value))
+            {
+                var property = properties[propertyName];
+                test.SetPropertyValue(property, value);
+                TestAdapter.Log($"SetTestCaseProperty('{propertyName}'='{value.Replace("\n", "\\n")}')");
+            }
+        }
 
         private static TestProperty RegisterTestCaseProperty(string name)
         {
