@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
@@ -18,6 +19,16 @@ namespace TestAdapterTest
                 var property = properties[name];
                 test.SetPropertyValue(property, value);
             }
+        }
+
+        public static string Get(TestCase test, string name, string defaultValue = null)
+        {
+            TestAdapter.Log($"TestCaseProperties.Get('{name}')");
+
+            var value = test.GetPropertyValue(properties[name], defaultValue);
+            TestAdapter.Log($"TestCaseProperties.Get('{name}') = '{value?.Replace("\n", "\\n")}'");
+
+            return value;
         }
 
         private static TestProperty RegisterTestCaseProperty(string name)

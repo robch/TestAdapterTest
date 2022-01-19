@@ -107,7 +107,7 @@ namespace TestAdapterTest
         private static TestOutcome TestRunAndRecord(TestCase test, IFrameworkHandle frameworkHandle)
         {
             TestAdapter.Log($"TestAdapter.TestRunAndRecord({test.DisplayName})");
-            return YamlTestCaseRunner.RunTestCase(test, frameworkHandle);
+            return YamlTestCaseRunner.RunAndRecordTestCase(test, frameworkHandle);
         }
 
         private static IMessageLogger logger = null;
