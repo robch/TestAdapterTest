@@ -58,9 +58,11 @@ namespace TestAdapterTest
             string name = GetTestCaseName(mapping);
             string prefix = GetTestCaseNamePrefix(file);
             var fullName = $"{prefix}.{name}";
-            
+
             #if DEBUG
-            fullName = $"{fullName} {DateTime.Now.TimeOfDay.TotalMilliseconds.ToString().Replace(".", "")}";
+                int milli = (int)DateTime.Now.TimeOfDay.TotalMilliseconds;
+                var extra = (milli % 10).ToString().Replace(".", "");
+                fullName = $"{fullName} {extra}";
             #endif
 
             return fullName;
