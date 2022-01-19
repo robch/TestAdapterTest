@@ -18,7 +18,7 @@ namespace TestAdapterTest
             return outcome;
         }
 
-        private static void RunTest(TestCase test, out string stdOut, out string stdErr, out string additional, out string debugTrace, out TestOutcome outcome)
+        private static TestOutcome RunTest(TestCase test, out string stdOut, out string stdErr, out string additional, out string debugTrace, out TestOutcome outcome)
         {
             var command = TestCaseProperties.Get(test, "command");
             var script = TestCaseProperties.Get(test, "script");
@@ -27,6 +27,21 @@ namespace TestAdapterTest
             var logExpect = TestCaseProperties.Get(test, "log-expect");
             var logNotExpect = TestCaseProperties.Get(test, "log-not-expect");
 
+            var simulate = TestCaseProperties.Get(test, "simulate");
+            return string.IsNullOrEmpty(simulate)
+                ? RunTestCase(test, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out additional, out debugTrace, out outcome)
+                : SimulateTestCase(test, simulate, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out additional, out debugTrace, out outcome);
+        }
+
+        private static TestOutcome RunTestCase(TestCase test, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, out string stdOut, out string stdErr, out string additional, out string debugTrace, out TestOutcome outcome)
+        {
+            // TODO: Actually run the test case here...
+            stdOut = stdErr = additional = debugTrace = null;
+            return outcome = TestOutcome.Skipped;
+        }
+
+        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, out string stdOut, out string stdErr, out string additional, out string debugTrace, out TestOutcome outcome)
+        {
             var sb = new StringBuilder();
             sb.AppendLine($"command='{command?.Replace("\n", "\\n")}'");
             sb.AppendLine($"script='{script?.Replace("\n", "\\n")}'");
@@ -39,12 +54,14 @@ namespace TestAdapterTest
             additional = "ADDITIONAL-INFO";
             debugTrace = "DEBUG-TRACE";
 
-            outcome = test.DisplayName.Contains("2") ? TestOutcome.Failed : TestOutcome.Passed;
+            outcome = simulate.ToLower() == "passed" ? TestOutcome.Passed : TestOutcome.Failed;
             if (outcome == TestOutcome.Passed)
             {
                 stdErr = null;
                 debugTrace = null;
             }
+
+            return outcome;
         }
 
         private static void RecordResult(TestCase test, IFrameworkHandle frameworkHandle, string stdOut, string stdErr, string additional, string debugTrace, TestOutcome outcome)

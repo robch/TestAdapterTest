@@ -42,7 +42,8 @@ namespace TestAdapterTest
             { "expect", RegisterTestCaseProperty("Expect") },
             { "not-expect", RegisterTestCaseProperty("NotExpect") },
             { "log-expect", RegisterTestCaseProperty("LogExpect") },
-            { "log-not-expect", RegisterTestCaseProperty("LogNotExpect") }
+            { "log-not-expect", RegisterTestCaseProperty("LogNotExpect") },
+            { "simulate", RegisterTestCaseProperty("Simulate") }
         };
     }
 }

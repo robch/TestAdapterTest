@@ -49,6 +49,7 @@ namespace TestAdapterTest
             SetTestCaseProperty(test, "not-expect", mapping, "not-expect");
             SetTestCaseProperty(test, "log-expect", mapping, "log-expect");
             SetTestCaseProperty(test, "log-not-expect", mapping, "log-not-expect");
+            SetTestCaseProperty(test, "simulate", mapping, "simulate");
 
             return test;
         }

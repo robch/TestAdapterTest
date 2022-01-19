@@ -1,8 +1,9 @@
-﻿- name: simple help test
+﻿- name: simple help test (fail)
   command: spx help
   expect: |
     SPX
     HELP
+  simulate: failed
 
 - name: simple RECO test
   command: spx recognize --file https://crbn.us/whatstheweatherlike.wav 
@@ -11,3 +12,4 @@
   log-expect: |
     path:.*turn.start
     path:.*turn.end
+  simulate: passed
