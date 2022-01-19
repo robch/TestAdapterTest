@@ -27,7 +27,10 @@ namespace TestAdapterTest
         public static void Log(string text)
         {
             File.AppendAllText("log", $"{DateTime.Now}: {text}\n");
+
+            #if DEBUG
             logger?.SendMessage(TestMessageLevel.Informational, $"{DateTime.Now}: {text}");
+            #endif
         }
 
         public static IEnumerable<TestCase> GetTestsFromFiles(IEnumerable<string> sources)
@@ -76,33 +79,42 @@ namespace TestAdapterTest
         {
             Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): ENTER");
 
-            var name = file.FullName.Remove(file.FullName.LastIndexOf(file.Extension)).Replace(" ", "").Trim('.');
-            var parts = name.Split(":/\\".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-            var tailParts = parts.Reverse().Take(5).Reverse();
-            var prefix = string.Join(".", tailParts);
-
-            yield return new TestCase($"{prefix}.Test1", ExecutorUri, source) { CodeFilePath = file.FullName, LineNumber = 1 };
-            yield return new TestCase($"{prefix}.Test2", ExecutorUri, source) { CodeFilePath = file.FullName, LineNumber = 2 };
-            yield return new TestCase($"{prefix}.Test3", ExecutorUri, source) { CodeFilePath = file.FullName, LineNumber = 3 };
+            foreach (var test in YamlTestCaseParser.TestCasesFromYaml(source, file))
+            {
+                yield return test;
+            }
 
             Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
         }
 
         private static void RunTest(TestCase test, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            TestAdapter.Log($"RunTest({test.DisplayName}): RecordStart, Wait...");
+            TestStart(test, frameworkHandle);
+            TestEnd(test, frameworkHandle, TestRunAndRecord(test, frameworkHandle));
+        }
+
+        private static void TestStart(TestCase test, IFrameworkHandle frameworkHandle)
+        {
+            TestAdapter.Log($"TestAdapter.TestStart({test.DisplayName})");
             frameworkHandle.RecordStart(test);
-            Task.Delay(500).Wait();
+        }
+
+        private static void TestEnd(TestCase test, IFrameworkHandle frameworkHandle, TestOutcome outcome)
+        {
+            TestAdapter.Log($"TestAdapter.TestEnd({test.DisplayName}): RecordEnd");
+            frameworkHandle.RecordEnd(test, outcome);
+        }
+
+        private static TestOutcome TestRunAndRecord(TestCase test, IFrameworkHandle frameworkHandle)
+        {
+            TestAdapter.Log($"TestAdapter.TestRunAndRecord({test.DisplayName})");
 
             var outcome = test.DisplayName.Contains("2") ? TestOutcome.Failed : TestOutcome.Passed;
-
-            TestAdapter.Log($"RunTest({test.DisplayName}): RecordResult...");
-            var result = new TestResult(test);
-            result.Outcome = outcome;
-            frameworkHandle.RecordResult(result);
-
-            TestAdapter.Log($"RunTest({test.DisplayName}): RecordEnd");
-            frameworkHandle.RecordEnd(test, outcome);
+            frameworkHandle.RecordResult(new TestResult(test)
+            {
+                Outcome = outcome
+            });
+            return outcome;
         }
 
         private static IMessageLogger logger = null;
