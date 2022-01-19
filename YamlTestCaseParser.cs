@@ -90,26 +90,7 @@ namespace TestAdapterTest
             var node = mapping.Children[mappingName] as YamlScalarNode;
             var value = node?.Value;
 
-            if (!string.IsNullOrEmpty(value))
-            {
-                var property = properties[propertyName];
-                test.SetPropertyValue(property, value);
-                TestAdapter.Log($"SetTestCaseProperty('{propertyName}'='{value.Replace("\n", "\\n")}')");
-            }
+            TestCaseProperties.Set(test, propertyName, value);
         }
-
-        private static TestProperty RegisterTestCaseProperty(string name)
-        {
-            return TestProperty.Register($"YamlTestCase.{name}", name, typeof(string), TestPropertyAttributes.Hidden, typeof(TestCase));
-        }
-
-        private static readonly Dictionary<string, TestProperty> properties = new Dictionary<string, TestProperty>() {
-            { "command", RegisterTestCaseProperty("Command") },
-            { "script", RegisterTestCaseProperty("Script") },
-            { "expect", RegisterTestCaseProperty("Expect") },
-            { "not-expect", RegisterTestCaseProperty("NotExpect") },
-            { "log-expect", RegisterTestCaseProperty("LogExpect") },
-            { "log-not-expect", RegisterTestCaseProperty("LogNotExpect") }
-        };
     }
 }
