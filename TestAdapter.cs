@@ -65,6 +65,7 @@ namespace TestAdapterTest
 
         private static IEnumerable<TestCase> GetTestsFromDirectory(string source, DirectoryInfo directory)
         {
+            Log($"TestAdapter::GetTestsFromDirectory('{source}', '{directory.FullName}'): ENTER");
             foreach (var file in directory.GetFiles($"*{FileExtensionYaml}"))
             {
                 foreach (var test in GetTestsFromYaml(source, file))
@@ -72,17 +73,16 @@ namespace TestAdapterTest
                     yield return test;
                 }
             }
+            Log($"TestAdapter::GetTestsFromDirectory('{source}', '{directory.FullName}'): EXIT");
         }
 
         private static IEnumerable<TestCase> GetTestsFromYaml(string source, FileInfo file)
         {
             Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): ENTER");
-
             foreach (var test in YamlTestCaseParser.TestCasesFromYaml(source, file))
             {
                 yield return test;
             }
-
             Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
         }
 
@@ -107,17 +107,7 @@ namespace TestAdapterTest
         private static TestOutcome TestRunAndRecord(TestCase test, IFrameworkHandle frameworkHandle)
         {
             TestAdapter.Log($"TestAdapter.TestRunAndRecord({test.DisplayName})");
-
-            var outcome = test.DisplayName.Contains("2") ? TestOutcome.Failed : TestOutcome.Passed;
-
-            var result = new TestResult(test) { Outcome = outcome };
-            result.Messages.Add(new TestResultMessage(TestResultMessage.StandardOutCategory, "STDOUT stuff goes here!!"));
-            result.Messages.Add(new TestResultMessage(TestResultMessage.StandardErrorCategory, "STDERR stuff goes here!!"));
-            result.Messages.Add(new TestResultMessage(TestResultMessage.AdditionalInfoCategory, "ADDITIONAL-INFO stuff goes here!!"));
-            result.Messages.Add(new TestResultMessage(TestResultMessage.DebugTraceCategory, "DEBUG-TRACE stuff goes here!!"));
-
-            frameworkHandle.RecordResult(result);
-            return outcome;
+            return YamlTestCaseRunner.RunTestCase(test, frameworkHandle);
         }
 
         private static IMessageLogger logger = null;

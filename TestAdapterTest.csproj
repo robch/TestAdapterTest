@@ -70,6 +70,7 @@
     <Compile Include="TestDiscoverer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="YamlTestCaseParser.cs" />
+    <Compile Include="YamlTestCaseRunner.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

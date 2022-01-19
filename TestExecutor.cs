@@ -15,7 +15,6 @@ namespace TestAdapterTest
     [ExtensionUri(TestAdapter.Executor)]
     public class TextExecutor : ITestExecutor
     {
-
         public void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             TestAdapter.Log(frameworkHandle);

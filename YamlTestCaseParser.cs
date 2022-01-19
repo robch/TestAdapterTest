@@ -1,9 +1,9 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using YamlDotNet.RepresentationModel;
 
 namespace TestAdapterTest
@@ -34,9 +34,7 @@ namespace TestAdapterTest
 
         private static TestCase TestCaseFromYamlMapping(string source, FileInfo file, YamlMappingNode mapping)
         {
-            string name = GetTestCaseName(mapping);
-            string prefix = GetTestCaseNamePrefix(file);
-            var fullName = $"{prefix}.{name}";
+            string fullName = GetTestCaseFullName(source, file, mapping);
 
             TestAdapter.Log($"YamlTestParser::GetTests(): new TestCase('{fullName}')");
             var test = new TestCase(fullName, new Uri(TestAdapter.Executor), source)
@@ -53,6 +51,19 @@ namespace TestAdapterTest
             SetTestCaseProperty(test, "log-not-expect", mapping, "log-not-expect");
 
             return test;
+        }
+
+        private static string GetTestCaseFullName(string source, FileInfo file, YamlMappingNode mapping)
+        {
+            string name = GetTestCaseName(mapping);
+            string prefix = GetTestCaseNamePrefix(file);
+            var fullName = $"{prefix}.{name}";
+            
+            #if DEBUG
+            fullName = $"{fullName} {DateTime.Now.TimeOfDay.TotalMilliseconds.ToString().Replace(".", "")}";
+            #endif
+
+            return fullName;
         }
 
         private static string GetTestCaseName(YamlMappingNode mapping)
