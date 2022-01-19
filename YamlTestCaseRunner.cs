@@ -18,16 +18,18 @@ namespace TestAdapterTest
             return outcome;
         }
 
+        #region private methods
+        
         private static TestOutcome RunTest(TestCase test, out string stdOut, out string stdErr, out string additional, out string debugTrace, out TestOutcome outcome)
         {
-            var command = TestCaseProperties.Get(test, "command");
-            var script = TestCaseProperties.Get(test, "script");
-            var expect = TestCaseProperties.Get(test, "expect");
-            var notExpect = TestCaseProperties.Get(test, "not-expect");
-            var logExpect = TestCaseProperties.Get(test, "log-expect");
-            var logNotExpect = TestCaseProperties.Get(test, "log-not-expect");
+            var command = TestProperties.Get(test, "command");
+            var script = TestProperties.Get(test, "script");
+            var expect = TestProperties.Get(test, "expect");
+            var notExpect = TestProperties.Get(test, "not-expect");
+            var logExpect = TestProperties.Get(test, "log-expect");
+            var logNotExpect = TestProperties.Get(test, "log-not-expect");
 
-            var simulate = TestCaseProperties.Get(test, "simulate");
+            var simulate = TestProperties.Get(test, "simulate");
             return string.IsNullOrEmpty(simulate)
                 ? RunTestCase(test, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out additional, out debugTrace, out outcome)
                 : SimulateTestCase(test, simulate, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out additional, out debugTrace, out outcome);
@@ -74,5 +76,7 @@ namespace TestAdapterTest
 
             frameworkHandle.RecordResult(result);
         }
+
+        #endregion
     }
 }

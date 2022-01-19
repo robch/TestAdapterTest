@@ -17,6 +17,8 @@ namespace TestAdapterTest
             return TestCasesFromYamlSequence(source, file, sequence);
         }
 
+        #region private methods
+        
         private static YamlStream ParseYamlStream(string fullName)
         {
             var stream = new YamlStream();
@@ -93,7 +95,9 @@ namespace TestAdapterTest
             var node = mapping.Children[mappingName] as YamlScalarNode;
             var value = node?.Value;
 
-            TestCaseProperties.Set(test, propertyName, value);
+            TestProperties.Set(test, propertyName, value);
         }
+
+        #endregion
     }
 }

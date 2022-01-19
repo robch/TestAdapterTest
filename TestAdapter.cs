@@ -45,6 +45,8 @@ namespace TestAdapterTest
             }
         }
 
+        #region private methods
+
         private static IEnumerable<TestCase> GetTestsFromDirectory(string source, DirectoryInfo directory)
         {
            Logger.Log($"TestAdapter::GetTestsFromDirectory('{source}', '{directory.FullName}'): ENTER");
@@ -99,11 +101,12 @@ namespace TestAdapterTest
             return YamlTestCaseRunner.RunAndRecordTestCase(test, frameworkHandle);
         }
 
-        #region public data
+        #endregion
+
+        #region test adapter registration data
         public const string FileExtensionDll = ".dll";
         public const string FileExtensionYaml = ".yaml";
         public const string Executor = "executor://robch/v1";
         #endregion
-
     }
 }

@@ -9,7 +9,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace TestAdapterTest
 {
-    public class TestCaseProperties
+    public class TestProperties
     {
         public static void Set(TestCase test, string name, string value)
         {
@@ -31,6 +31,7 @@ namespace TestAdapterTest
             return value;
         }
 
+        #region private methods and data
         private static TestProperty RegisterTestCaseProperty(string name)
         {
             return TestProperty.Register($"YamlTestCase.{name}", name, typeof(string), TestPropertyAttributes.Hidden, typeof(TestCase));
@@ -45,5 +46,7 @@ namespace TestAdapterTest
             { "log-not-expect", RegisterTestCaseProperty("LogNotExpect") },
             { "simulate", RegisterTestCaseProperty("Simulate") }
         };
+
+        #endregion
     }
 }
