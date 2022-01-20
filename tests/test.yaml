@@ -64,7 +64,14 @@
     RECOGNIZED: What's the weather like\?\r?$\n
     ^\r?$\n
     ^SESSION STOPPED: \w+\r?$\n
+  log-expect: |
+    path:.*turn.start
+    path:.*turn.end
 
-  #log-expect: |
-  #  path:.*turn.start
-  #  path:.*turn.end
+- name: 2 byte recognition
+  script: echo ..|spx recognize --file -
+  expect: |
+    SESSION STARTED: \w+\r?$\n
+    ^\r?$\n
+    ^Connection CONNECTED\.\.\.\r?$\n
+    ^SESSION STOPPED: \w+\r?$\n
