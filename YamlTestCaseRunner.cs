@@ -20,7 +20,7 @@ namespace TestAdapterTest
         }
 
         #region private methods
-        
+
         private static TestOutcome RunTest(TestCase test, out string stdOut, out string stdErr, out string errorMessage, out string additional, out string debugTrace, out TestOutcome outcome)
         {
             var command = TestProperties.Get(test, "command");
@@ -58,12 +58,34 @@ namespace TestAdapterTest
             debugTrace = "DEBUG-TRACE";
             errorMessage = "ERRORMESSAGE";
 
-            outcome = simulate.ToLower() == "passed" ? TestOutcome.Passed : TestOutcome.Failed;
+            outcome = OutcomeFromString(simulate);
             if (outcome == TestOutcome.Passed)
             {
                 stdErr = null;
                 debugTrace = null;
                 errorMessage = null;
+            }
+
+            return outcome;
+        }
+
+        private static TestOutcome OutcomeFromString(string simulate)
+        {
+            Debugger.Launch();
+            TestOutcome outcome = TestOutcome.None;
+            switch (simulate?.ToLower())
+            {
+                case "failed":
+                    outcome = TestOutcome.Failed;
+                    break;
+
+                case "skipped":
+                    outcome = TestOutcome.Skipped;
+                    break;
+
+                case "passed":
+                    outcome = TestOutcome.Passed;
+                    break;
             }
 
             return outcome;
