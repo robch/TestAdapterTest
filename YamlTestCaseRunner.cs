@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
@@ -47,7 +48,9 @@ namespace TestAdapterTest
 
             try
             {
-                script = WriteTextToTempFile(script);
+                var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+                script = WriteTextToTempFile(script, isWindows ? "cmd" : "sh");
+
                 expect = WriteTextToTempFile(expect);
                 notExpect = WriteTextToTempFile(notExpect);
                 logExpect = WriteTextToTempFile(logExpect);
@@ -98,11 +101,16 @@ namespace TestAdapterTest
             return outcome;
         }
 
-        private static string WriteTextToTempFile(string text)
+        private static string WriteTextToTempFile(string text, string extension = null)
         {
             if (!string.IsNullOrEmpty(text))
             {
                 var tempFile = Path.GetTempFileName();
+                if (!string.IsNullOrEmpty(extension))
+                {
+                    tempFile = $"{tempFile}.{extension}";
+                }
+
                 File.WriteAllText(tempFile, text);
                 return tempFile;
             }
@@ -113,7 +121,7 @@ namespace TestAdapterTest
         {
             return !string.IsNullOrEmpty(command) || string.IsNullOrEmpty(script)
                 ? $"{command} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}"
-                : $"quiet run --script @{script} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}";
+                : $"quiet run --script {script} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}";
         }
 
         private static string GetAtArgs(string expect, string notExpect, string logExpect, string logNotExpect)

@@ -1,5 +1,10 @@
 ﻿- name: simple help test
-  script: spx help
+  script: |
+    spx help
+    spx recognize
+    spx synthesize
+    spx translate
+    
   expect: |
     SPX
     USAGE

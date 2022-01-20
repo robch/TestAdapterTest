@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
@@ -52,8 +53,22 @@ namespace TestAdapterTest
             SetTestCaseProperty(test, "log-expect", mapping, "log-expect");
             SetTestCaseProperty(test, "log-not-expect", mapping, "log-not-expect");
             SetTestCaseProperty(test, "simulate", mapping, "simulate");
+            CheckBadNodes(file, mapping, test);
 
             return test;
+        }
+
+        private static void CheckBadNodes(FileInfo file, YamlMappingNode mapping, TestCase test)
+        {
+            foreach (YamlScalarNode key in mapping.Children.Keys)
+            {
+                if (";name;command;script;expect;not-expect;log-expect;log-not-expect;simulate;".IndexOf($";{key.Value};") < 0)
+                {
+                    var error = $"**** Unexpected YAML node ('{key.Value}') in {file.FullName}({mapping[key].Start.Line})";
+                    test.DisplayName = error;
+                    Logger.Log(error);
+                }
+            }
         }
 
         private static string GetTestCaseFullName(string source, FileInfo file, YamlMappingNode mapping)
