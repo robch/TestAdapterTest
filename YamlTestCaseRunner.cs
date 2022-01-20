@@ -71,9 +71,7 @@ namespace TestAdapterTest
                     ? TestOutcome.Passed
                     : TestOutcome.Failed;
 
-                errorMessage = outcome == TestOutcome.Passed
-                    ? $"EXIT CODE: {process.ExitCode}"
-                    : null;
+                errorMessage = $"EXIT CODE: {process.ExitCode}";
                 additional = ""
                     + $"START TIME: {process.StartTime}"
                     + $" STOP TIME: {process.ExitTime}"

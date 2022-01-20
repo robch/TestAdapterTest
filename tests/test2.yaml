@@ -1,8 +1,11 @@
 ﻿- name: simple help test
-  command: spx help
+  script: spx help
   expect: |
     SPX
-    HELP
+    USAGE
+    COMMANDS
+    EXAMPLES
+    ADDITIONAL TOPICS
 
 - name: simple synthesis test
   command: spx synthesize --text Hello --audio output hello.wav
