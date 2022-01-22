@@ -1,5 +1,4 @@
 ﻿- name: simple help test
-  namespace: SimpleNamespace
   script: spx
   expect: |
     (?# ---------- BANNER)
@@ -77,71 +76,47 @@
     ^Connection CONNECTED\.\.\.\r?$\n
     ^SESSION STOPPED: \w+\r?$\n
 
-#- name: speech_recognizer_tests.prep INPUTS
-#  script: |
-#    spx config @WAIT_FOR_RECO_RESULT_TIME --set 60000
+- class: speech_recognizer_tests
+  area: prepare
+  name: INPUTS
+  script: |
+    spx config @WAIT_FOR_RECO_RESULT_TIME --set 60000
 
-#    spx config @SINGLE_UTTERANCE.Text --set "This is a test."
-#    spx config @SINGLE_UTTERANCE.FilePath --set this-is-a-test.wav
-#    spx synthesize --text @SINGLE_UTTERANCE.Text --audio output this-is-a-test.wav
+    spx config @SINGLE_UTTERANCE.Text --set "This is a test."
+    spx config @SINGLE_UTTERANCE.FilePath --set this-is-a-test.wav
+    spx synthesize --text @SINGLE_UTTERANCE.Text --audio output this-is-a-test.wav
 
-#    spx config @SINGLE_UTTERANCE_MP3.Text --set Hello.
-#    spx config @SINGLE_UTTERANCE_MP3.FilePath --set hello.mp3
-#    spx synthesize --text @SINGLE_UTTERANCE_MP3.Text --format mp3 --audio output hello.mp3
+    spx config @SINGLE_UTTERANCE_MP3.Text --set Hello.
+    spx config @SINGLE_UTTERANCE_MP3.FilePath --set hello.mp3
+    spx synthesize --text @SINGLE_UTTERANCE_MP3.Text --format mp3 --audio output hello.mp3
 
-#- name: speech_recognizer_tests.push stream works mp3
-#  command: recognize
-#    --file @SINGLE_UTTERANCE_MP3.FilePath
-#    --format mp3
-#    --check text eq @SINGLE_UTTERANCE_MP3.Text
-#    --continuous --timeout @WAIT_FOR_RECO_RESULT_TIME
-
-#- name: speech_recognizer_tests.start and stop
-#  command: recognize
-#    --file @SINGLE_UTTERANCE.FilePath
-#    --check text eq @SINGLE_UTTERANCE.Text
-#    --continuous --timeout @WAIT_FOR_RECO_RESULT_TIME
-
-#- name: speech_recognizer_tests.start and then stop immediately
-#  script:
-#    spx recognize
-#      --file @SINGLE_UTTERANCE.FilePath
-#      --continuous --timeout 0
-#      --expect "SESSION\sSTARTED:;SESSION\sSTOPPED:"
-
-#    spx recognize
-#      --file @SINGLE_UTTERANCE.FilePath
-#      --continuous --timeout 0
-#      --expect "SESSION\sSTARTED:;SESSION\sSTOPPED:"
-#      --fast 0 --not expect "RECOGNIZED:"
-
-- namespace: speech_recognizer_tests
+- class: speech_recognizer_tests
+  area: tests
   tests:
-
-  - name: push stream works mp3
-    namespace: push stream
+  - area: push stream
+    name: push stream works mp3
     command: recognize
       --file @single_utterance_mp3.filepath
       --format mp3
       --check text eq @single_utterance_mp3.text
       --continuous --timeout @wait_for_reco_result_time
 
-  - name: start and stop
-    command: recognize
-      --file @single_utterance.filepath
-      --check text eq @single_utterance.text
-      --continuous --timeout @wait_for_reco_result_time
-
-  - namespace: start and stop immediately
+  - area: start and stop
     tests:
 
-    - name: regular
+    - name: normal
+      command: recognize
+        --file @single_utterance.filepath
+        --check text eq @single_utterance.text
+        --continuous --timeout @wait_for_reco_result_time
+
+    - name: timeout 0
       command: recognize
         --file @single_utterance.filepath
         --continuous --timeout 0
         --expect "SESSION\sSTARTED:;SESSION\sSTOPPED:"
 
-    - name: fast 0 (no recognized)
+    - name: timeout 0 fast 0 (no recognized)
       command:
         spx recognize
           --file @single_utterance.filepath

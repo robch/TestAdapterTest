@@ -16,8 +16,8 @@ namespace TestAdapterTest
             var parsed = ParseYamlStream(file.FullName);
             var sequence = parsed?.Documents?[0].RootNode as YamlSequenceNode;
 
-            var rootNamespace = GetRootNamespace(file);
-            return TestCasesFromYamlSequence(source, file, sequence, rootNamespace, defaultClassName);
+            var rootArea = GetRootArea(file);
+            return TestCasesFromYamlSequence(source, file, sequence, rootArea, defaultClassName);
         }
 
         #region private methods
@@ -29,19 +29,19 @@ namespace TestAdapterTest
             return stream;
         }
 
-        private static IEnumerable<TestCase> TestCasesFromYamlSequence(string source, FileInfo file, YamlSequenceNode sequence, string @namespace, string @class)
+        private static IEnumerable<TestCase> TestCasesFromYamlSequence(string source, FileInfo file, YamlSequenceNode sequence, string area, string @class)
         {
             var tests = new List<TestCase>();
             foreach (YamlMappingNode mapping in sequence?.Children)
             {
-                var test = GetTestFromNode(source, file, mapping, @namespace, @class);
+                var test = GetTestFromNode(source, file, mapping, area, @class);
                 if (test != null)
                 {
                     tests.Add(test);
                     continue;
                 }
 
-                var children = CheckForChildren(source, file, mapping, @namespace, @class);
+                var children = CheckForChildren(source, file, mapping, area, @class);
                 if (children != null)
                 {
                     tests.AddRange(children);
@@ -51,15 +51,15 @@ namespace TestAdapterTest
             return tests;
         }
 
-        private static TestCase GetTestFromNode(string source, FileInfo file, YamlMappingNode mapping, string @namespace, string @class)
+        private static TestCase GetTestFromNode(string source, FileInfo file, YamlMappingNode mapping, string area, string @class)
         {
             string command = GetScalarString(mapping, "command");
             string script = GetScalarString(mapping, "script");
             var bothOrNeither = (command == null) == (script == null);
             if (bothOrNeither) return null;
 
-            string fullyQualifiedName = GetFullyQualifiedName(mapping, @namespace, @class);
-            if (fullyQualifiedName == null) return null;
+            string fullyQualifiedName = GetFullyQualifiedName(mapping, area, @class)
+                ?? GetFullyQualifiedName(area, @class, $"Expected YAML node ('name') at {file.FullName}({mapping.Start.Line})");
 
             Logger.Log($"YamlTestParser::GetTests(): new TestCase('{fullyQualifiedName}')");
             var test = new TestCase(fullyQualifiedName, new Uri(TestAdapter.Executor), source)
@@ -81,7 +81,7 @@ namespace TestAdapterTest
             return test;
         }
 
-        private static IEnumerable<TestCase> CheckForChildren(string source, FileInfo file, YamlMappingNode mapping, string @namespace, string @class)
+        private static IEnumerable<TestCase> CheckForChildren(string source, FileInfo file, YamlMappingNode mapping, string area, string @class)
         {
             var sequence = mapping.Children.ContainsKey("tests")
                 ? mapping.Children["tests"] as YamlSequenceNode
@@ -89,16 +89,16 @@ namespace TestAdapterTest
             if (sequence == null) return null;
 
             @class = GetScalarString(mapping, "class", @class);
-            @namespace = UpdateNamespace(mapping, @namespace);
+            area = UpdateArea(mapping, area);
 
-            return TestCasesFromYamlSequence(source, file, sequence, @namespace, @class);
+            return TestCasesFromYamlSequence(source, file, sequence, area, @class);
         }
 
         private static void CheckInvalidTestCaseNodes(FileInfo file, YamlMappingNode mapping, TestCase test)
         {
             foreach (YamlScalarNode key in mapping.Children.Keys)
             {
-                if (";namespace;class;name;command;script;expect;not-expect;log-expect;log-not-expect;simulate;".IndexOf($";{key.Value};") < 0)
+                if (";area;class;name;command;script;expect;not-expect;log-expect;log-not-expect;simulate;".IndexOf($";{key.Value};") < 0)
                 {
                     var error = $"**** Unexpected YAML node ('{key.Value}') in {file.FullName}({mapping[key].Start.Line})";
                     test.DisplayName = error;
@@ -132,33 +132,33 @@ namespace TestAdapterTest
             return value ?? defaultValue;
         }
 
-        private static string GetRootNamespace(FileInfo file)
+        private static string GetRootArea(FileInfo file)
         {
             return $"{file.Extension.TrimStart('.')}.{file.Name.Remove(file.Name.LastIndexOf(file.Extension))}";
         }
 
-        private static string UpdateNamespace(YamlMappingNode mapping, string @namespace)
+        private static string UpdateArea(YamlMappingNode mapping, string area)
         {
-            var subNamespace = GetScalarString(mapping, "namespace");
-            return string.IsNullOrEmpty(subNamespace)
-                ? @namespace
-                : $"{@namespace}.{subNamespace}";
+            var subArea = GetScalarString(mapping, "area");
+            return string.IsNullOrEmpty(subArea)
+                ? area
+                : $"{area}.{subArea}";
         }
 
-        private static string GetFullyQualifiedName(YamlMappingNode mapping, string @namespace, string @class)
+        private static string GetFullyQualifiedName(YamlMappingNode mapping, string area, string @class)
         {
             var name = GetScalarString(mapping, "name");
             if (name == null) return null;
 
-            @namespace = UpdateNamespace(mapping, @namespace);
+            area = UpdateArea(mapping, area);
             @class = GetScalarString(mapping, "class", @class);
 
-            return GetFullyQualifiedName(@namespace, @class, name);
+            return GetFullyQualifiedName(area, @class, name);
         }
 
-        private static string GetFullyQualifiedName(string @namespace, string @class, string name)
+        private static string GetFullyQualifiedName(string area, string @class, string name)
         {
-            return $"{@namespace}.{@class}.{name}";
+            return $"{area}.{@class}.{name}";
         }
 
         private const string defaultClassName = "TestCases";
