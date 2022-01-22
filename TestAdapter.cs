@@ -49,7 +49,7 @@ namespace TestAdapterTest
 
         private static IEnumerable<TestCase> GetTestsFromDirectory(string source, DirectoryInfo directory)
         {
-           Logger.Log($"TestAdapter::GetTestsFromDirectory('{source}', '{directory.FullName}'): ENTER");
+            Logger.Log($"TestAdapter::GetTestsFromDirectory('{source}', '{directory.FullName}'): ENTER");
             foreach (var file in FindFiles(directory))
             {
                 foreach (var test in GetTestsFromYaml(source, file))
@@ -62,9 +62,7 @@ namespace TestAdapterTest
 
         private static IEnumerable<FileInfo> FindFiles(DirectoryInfo directory)
         {
-            var files1 = directory.GetFiles($"*{FileExtensionYaml}");
-            var files2 = directory.GetFiles($"tests\\*{FileExtensionYaml}");
-            return files1.Concat(files2);
+            return directory.GetFiles($"*{FileExtensionYaml}", SearchOption.AllDirectories);
         }
 
         private static IEnumerable<TestCase> GetTestsFromYaml(string source, FileInfo file)
