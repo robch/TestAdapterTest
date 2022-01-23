@@ -27,10 +27,20 @@ namespace TestAdapterTest
                 case "name":
                 case "displayname": return test.DisplayName;
                 case "fullyqualifiedname": return test.FullyQualifiedName;
+
+                case "command": return TestProperties.Get(test, "command");
+                case "script": return TestProperties.Get(test, "script");
+
+                case "expect": return TestProperties.Get(test, "expect");
+                case "not-expect": return TestProperties.Get(test, "not-expect");
+                case "log-expect": return TestProperties.Get(test, "log-expect");
+                case "log-not-expect": return TestProperties.Get(test, "log-not-expect");
+
+                case "simulate": return TestProperties.Get(test, "simulate");
             }
             return null;
         }
 
-        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName" };
+        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName", "command", "script", "expect", "not-expect", "log-expect", "log-not-expect", "simulate" };
     }
 }
