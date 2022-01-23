@@ -111,30 +111,30 @@
     - area: push stream
       name: push stream works mp3
       command: recognize
-        --file @single_utterance_mp3.filepath
+        --file @SINGLE_UTTERANCE_MP3.FilePath
         --format mp3
-        --check text eq @single_utterance_mp3.text
-        --continuous --timeout @wait_for_reco_result_time
+        --check text eq @SINGLE_UTTERANCE_MP3.Text
+        --continuous --timeout @WAIT_FOR_RECO_RESULT_TIME
 
     - area: start and stop
       tests:
 
       - name: normal
         command: recognize
-          --file @single_utterance.filepath
-          --check text eq @single_utterance.text
-          --continuous --timeout @wait_for_reco_result_time
+          --file @SINGLE_UTTERANCE.FilePath
+          --check text eq @SINGLE_UTTERANCE.Text
+          --continuous --timeout @WAIT_FOR_RECO_RESULT_TIME
 
       - name: timeout 0
         command: recognize
-          --file @single_utterance.filepath
+          --file @SINGLE_UTTERANCE.FilePath
           --continuous --timeout 0
           --expect "SESSION\sSTARTED:;SESSION\sSTOPPED:"
 
       - name: timeout 0 fast 0 (no recognized)
         command:
           spx recognize
-            --file @single_utterance.filepath
+            --file @SINGLE_UTTERANCE.FilePath
             --continuous --timeout 0
             --expect "SESSION\sSTARTED:;SESSION\sSTOPPED:"
-            --fast 0 --not expect "recognized:"
+            --fast 0 --not expect "RECOGNIZED:"

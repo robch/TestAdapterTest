@@ -41,7 +41,7 @@ namespace TestAdapterTest
         {
             foreach (var test in tests)
             {
-                RunTest(test, runContext, frameworkHandle);
+                RunAndRecordTestCase(test, frameworkHandle);
             }
         }
 
@@ -75,25 +75,7 @@ namespace TestAdapterTest
            Logger.Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
         }
 
-        private static void RunTest(TestCase test, IRunContext runContext, IFrameworkHandle frameworkHandle)
-        {
-            TestStart(test, frameworkHandle);
-            TestEnd(test, frameworkHandle, TestRunAndRecord(test, frameworkHandle));
-        }
-
-        private static void TestStart(TestCase test, IFrameworkHandle frameworkHandle)
-        {
-            Logger.Log($"TestAdapter.TestStart({test.DisplayName})");
-            frameworkHandle.RecordStart(test);
-        }
-
-        private static void TestEnd(TestCase test, IFrameworkHandle frameworkHandle, TestOutcome outcome)
-        {
-            Logger.Log($"TestAdapter.TestEnd({test.DisplayName})");
-            frameworkHandle.RecordEnd(test, outcome);
-        }
-
-        private static TestOutcome TestRunAndRecord(TestCase test, IFrameworkHandle frameworkHandle)
+        private static TestOutcome RunAndRecordTestCase(TestCase test, IFrameworkHandle frameworkHandle)
         {
             Logger.Log($"TestAdapter.TestRunAndRecord({test.DisplayName})");
             return YamlTestCaseRunner.RunAndRecordTestCase(test, frameworkHandle);

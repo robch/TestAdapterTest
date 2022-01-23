@@ -16,14 +16,25 @@ namespace TestAdapterTest
     {
         public static TestOutcome RunAndRecordTestCase(TestCase test, IFrameworkHandle frameworkHandle)
         {
-            RunTest(test, out var stdOut, out var stdErr, out string errorMessage, out var additional, out var debugTrace, out var outcome);
-            RecordResult(test, frameworkHandle, stdOut, stdErr, errorMessage, additional, debugTrace, outcome);
+            var start = DateTime.UtcNow;
+            TestStart(test, frameworkHandle);
+            TestRun(test, out var stdOut, out var stdErr, out string errorMessage, out var additional, out var debugTrace, out var outcome);
+            TestStop(test, frameworkHandle, outcome);
+            var stop = DateTime.UtcNow;
+
+            TestRecordResult(test, frameworkHandle, start, stop, stdOut, stdErr, errorMessage, additional, debugTrace, outcome);
             return outcome;
         }
 
         #region private methods
 
-        private static TestOutcome RunTest(TestCase test, out string stdOut, out string stdErr, out string errorMessage, out string additional, out string debugTrace, out TestOutcome outcome)
+        private static void TestStart(TestCase test, IFrameworkHandle frameworkHandle)
+        {
+            Logger.Log($"YamlTestCaseRunner.TestStart({test.DisplayName})");
+            frameworkHandle.RecordStart(test);
+        }
+
+        private static TestOutcome TestRun(TestCase test, out string stdOut, out string stdErr, out string errorMessage, out string additional, out string debugTrace, out TestOutcome outcome)
         {
             var command = TestProperties.Get(test, "command");
             var script = TestProperties.Get(test, "script");
@@ -181,14 +192,25 @@ namespace TestAdapterTest
             return outcome;
         }
 
-        private static void RecordResult(TestCase test, IFrameworkHandle frameworkHandle, string stdOut, string stdErr, string errorMessage, string additional, string debugTrace, TestOutcome outcome)
+        private static void TestStop(TestCase test, IFrameworkHandle frameworkHandle, TestOutcome outcome)
         {
+            Logger.Log($"YamlTestCaseRunner.TestEnd({test.DisplayName})");
+            frameworkHandle.RecordEnd(test, outcome);
+        }
+
+        private static void TestRecordResult(TestCase test, IFrameworkHandle frameworkHandle, DateTime start, DateTime stop, string stdOut, string stdErr, string errorMessage, string additional, string debugTrace, TestOutcome outcome)
+        {
+            Logger.Log($"YamlTestCaseRunner.TestRecordResult({test.DisplayName})");
+
             var result = new TestResult(test) { Outcome = outcome };
             result.Messages.Add(new TestResultMessage(TestResultMessage.StandardOutCategory, stdOut));
             result.Messages.Add(new TestResultMessage(TestResultMessage.StandardErrorCategory, stdErr));
             result.Messages.Add(new TestResultMessage(TestResultMessage.AdditionalInfoCategory, additional));
             result.Messages.Add(new TestResultMessage(TestResultMessage.DebugTraceCategory, debugTrace));
             result.ErrorMessage = errorMessage;
+            result.StartTime = start;
+            result.EndTime = stop;
+            result.Duration = stop - start;
 
             frameworkHandle.RecordResult(result);
         }
