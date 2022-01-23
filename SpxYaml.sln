@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.32002.261
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpxYamlTestAdapter", "src\TestAdapter\SpxYamlTestAdapter.csproj", "{D5E11B2B-2630-404C-8237-9161B6C489F1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YamlTestAdapter", "src\TestAdapter\YamlTestAdapter.csproj", "{D5E11B2B-2630-404C-8237-9161B6C489F1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpxYamlTestRunner", "src\TestRunner\SpxYamlTestRunner.csproj", "{6A427711-49B9-495B-9C7C-955F43A2B914}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YamlTestRunner", "src\TestRunner\YamlTestRunner.csproj", "{6A427711-49B9-495B-9C7C-955F43A2B914}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

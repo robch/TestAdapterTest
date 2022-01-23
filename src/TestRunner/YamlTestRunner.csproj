@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TestAdapter\SpxYamlTestAdapter.csproj" />
+    <ProjectReference Include="..\TestAdapter\YamlTestAdapter.csproj" />
   </ItemGroup>
 
 </Project>
