@@ -92,7 +92,7 @@ namespace TestAdapterTest
         #region test adapter registration data
         public const string FileExtensionDll = ".dll";
         public const string FileExtensionYaml = ".yaml";
-        public const string Executor = "executor://robch/v1";
+        public const string Executor = "executor://spx/yaml/VsTestRunner1";
         #endregion
     }
 }
