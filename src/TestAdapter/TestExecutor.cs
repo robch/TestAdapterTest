@@ -20,10 +20,6 @@ namespace TestAdapterTest
             Logger.Log(frameworkHandle);
             Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): ENTER");
             Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): count={tests.Count()}");
-
-            tests = FilterTests(tests, runContext, frameworkHandle);
-            Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): count={tests.Count()} (post filter)");
-
             TestAdapter.RunTests(tests, runContext, frameworkHandle);
             Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): EXIT");
         }

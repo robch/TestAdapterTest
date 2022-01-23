@@ -39,7 +39,7 @@ namespace TestAdapterTest
 
         public static void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            foreach (var test in tests)
+            foreach (var test in FilterTestCases(tests, runContext, frameworkHandle))
             {
                 RunAndRecordTestCase(test, frameworkHandle);
             }
@@ -73,6 +73,12 @@ namespace TestAdapterTest
                 yield return test;
             }
            Logger.Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
+        }
+
+        private static IEnumerable<TestCase> FilterTestCases(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
+        {
+            Logger.Log($"TestAdapter.FilterTestCases()");
+            return YamlTestCaseFilter.FilterTestCases(tests, runContext, frameworkHandle);
         }
 
         private static TestOutcome RunAndRecordTestCase(TestCase test, IFrameworkHandle frameworkHandle)
