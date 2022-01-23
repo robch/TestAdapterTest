@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace TestAdapterTest
 {
-    public class TestAdapter
+    public class YamlTestAdapter
     {
         public static IEnumerable<TestCase> GetTestsFromFiles(IEnumerable<string> sources)
         {

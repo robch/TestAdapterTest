@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 
 namespace TestAdapterTest
 {
-    [FileExtension(TestAdapter.FileExtensionYaml)]
-    [FileExtension(TestAdapter.FileExtensionDll)]
-    [DefaultExecutorUri(TestAdapter.Executor)]
+    [FileExtension(YamlTestAdapter.FileExtensionYaml)]
+    [FileExtension(YamlTestAdapter.FileExtensionDll)]
+    [DefaultExecutorUri(YamlTestAdapter.Executor)]
     public class TestDiscoverer : ITestDiscoverer
     {
         public void DiscoverTests(IEnumerable<string> sources, IDiscoveryContext discoveryContext, IMessageLogger logger, ITestCaseDiscoverySink discoverySink)
@@ -22,7 +22,7 @@ namespace TestAdapterTest
             Logger.Log(logger);
             Logger.Log($"TestDiscoverer.DiscoverTests(): ENTER");
             Logger.Log($"TestDiscoverer.DiscoverTests(): count={sources.Count()}");
-            foreach (var test in TestAdapter.GetTestsFromFiles(sources))
+            foreach (var test in YamlTestAdapter.GetTestsFromFiles(sources))
             {
                 discoverySink.SendTestCase(test);
             }

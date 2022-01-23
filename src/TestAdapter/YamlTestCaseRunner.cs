@@ -36,14 +36,14 @@ namespace TestAdapterTest
 
         private static TestOutcome TestRun(TestCase test, out string stdOut, out string stdErr, out string errorMessage, out string additional, out string debugTrace, out TestOutcome outcome)
         {
-            var command = TestProperties.Get(test, "command");
-            var script = TestProperties.Get(test, "script");
-            var expect = TestProperties.Get(test, "expect");
-            var notExpect = TestProperties.Get(test, "not-expect");
-            var logExpect = TestProperties.Get(test, "log-expect");
-            var logNotExpect = TestProperties.Get(test, "log-not-expect");
+            var command = YameTestProperties.Get(test, "command");
+            var script = YameTestProperties.Get(test, "script");
+            var expect = YameTestProperties.Get(test, "expect");
+            var notExpect = YameTestProperties.Get(test, "not-expect");
+            var logExpect = YameTestProperties.Get(test, "log-expect");
+            var logNotExpect = YameTestProperties.Get(test, "log-not-expect");
 
-            var simulate = TestProperties.Get(test, "simulate");
+            var simulate = YameTestProperties.Get(test, "simulate");
             return string.IsNullOrEmpty(simulate)
                 ? RunTestCase(test, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out errorMessage, out additional, out debugTrace, out outcome)
                 : SimulateTestCase(test, simulate, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out errorMessage, out additional, out debugTrace, out outcome);

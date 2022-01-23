@@ -62,7 +62,7 @@ namespace TestAdapterTest
                 ?? GetFullyQualifiedName(area, @class, $"Expected YAML node ('name') at {file.FullName}({mapping.Start.Line})");
 
             Logger.Log($"YamlTestParser::GetTests(): new TestCase('{fullyQualifiedName}')");
-            var test = new TestCase(fullyQualifiedName, new Uri(TestAdapter.Executor), source)
+            var test = new TestCase(fullyQualifiedName, new Uri(YamlTestAdapter.Executor), source)
             {
                 CodeFilePath = file.FullName,
                 LineNumber = mapping.Start.Line
@@ -117,7 +117,7 @@ namespace TestAdapterTest
         {
             if (value != null)
             {
-                TestProperties.Set(test, propertyName, value);
+                YameTestProperties.Set(test, propertyName, value);
             }
         }
 
