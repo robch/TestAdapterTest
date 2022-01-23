@@ -1,6 +1,4 @@
-.vs/TestAdapterTest/
-packages/
-src/bin/Debug/
-src/bin/Release/
-src/obj/Debug/
-src/obj/Release/
+**/.vs/
+src/**/obj/*
+src/**/bin/*
+src/**/packages/*
