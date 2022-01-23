@@ -1,6 +1,6 @@
 .vs/TestAdapterTest/
-bin/Debug/
-bin/Release/
-obj/Debug/
-obj/Release/
 packages/
+src/bin/Debug/
+src/bin/Release/
+src/obj/Debug/
+src/obj/Release/
