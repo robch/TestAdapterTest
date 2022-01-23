@@ -67,7 +67,7 @@ namespace TestAdapterTest
 
         private static IEnumerable<TestCase> GetTestsFromYaml(string source, FileInfo file)
         {
-           Logger.Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): ENTER");
+            Logger.Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): ENTER");
             foreach (var test in YamlTestCaseParser.TestCasesFromYaml(source, file))
             {
                 yield return test;

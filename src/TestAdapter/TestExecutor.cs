@@ -20,6 +20,10 @@ namespace TestAdapterTest
             Logger.Log(frameworkHandle);
             Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): ENTER");
             Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): count={tests.Count()}");
+
+            tests = FilterTests(tests, runContext, frameworkHandle);
+            Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): count={tests.Count()} (post filter)");
+
             TestAdapter.RunTests(tests, runContext, frameworkHandle);
             Logger.Log($"TextExecutor.RunTests(IEnumerable<TestCase>(): EXIT");
         }
@@ -37,5 +41,24 @@ namespace TestAdapterTest
         {
             Logger.Log($"TextExecutor.Cancel(): ENTER/EXIT");
         }
+
+        private IEnumerable<TestCase> FilterTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
+        {
+            var filter = runContext.GetTestCaseFilter(supportedFilterProperties, null);
+            return tests.Where(test => filter == null || filter.MatchTestCase(test, name => GetPropertyValue(test, name)));
+        }
+
+        private object GetPropertyValue(TestCase test, string name)
+        {
+            switch (name.ToLower())
+            {
+                case "name":
+                case "displayname": return test.DisplayName;
+                case "fullyqualifiedname": return test.FullyQualifiedName;
+            }
+            return null;
+        }
+
+        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName" };
     }
 }
