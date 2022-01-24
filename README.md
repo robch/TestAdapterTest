@@ -2,6 +2,12 @@
 
 PRE-REQUISITES:
 * `spx` must be accessible in `PATH`
+* `spx` must be configured as required for tests (e.g. `region` and `key`, or `endpoint` setup)
+- see: https://crbn.us/searchdocs?spx
+- OR ...
+  - `dotnet tool install --global Microsoft.CognitiveServices.Speech.CLI`
+  - `spx config @region --set YOUR-REGION-HERE`
+  - `spx config @key --set YOUR-KEY-HERE`
 
 ## Run ALL tests
 
