@@ -21,6 +21,19 @@ OR ... [Build](#BUILD) first, then w/Visual Studio 2019+:
 * Run all tests (`<ctrl-R>V`)
 
 ---
+## LIST tests
+
+**dotnet test**  
+From fresh clone (one step, CLI):
+* DEBUG: `dotnet test -t`
+* RELEASE: `dotnet test --configuration release -t`
+
+**dotnet vstest**  
+OR ... [Build](#BUILD) first, then w/CLI:
+* DEBUG: `cd src\TestRunner\bin\Debug\netcoreapp3.1` && `dotnet vstest YamlTestRunner.dll -lt`
+* RELEASE: `cd src\TestRunner\bin\Release\netcoreapp3.1` && `dotnet vstest YamlTestRunner.dll -lt`
+
+---
 ## Run SOME tests
 
 **dotnet test**  
@@ -40,7 +53,7 @@ OR ... [Build](#BUILD) first, then w/Visual Studio 2019+:
 - OR ... `<ctrl-E>`, enter search criteria, press `<ENTER>`
 * Run selected tests (w/ mouse: `Right-click`, click on `Run`)
 
-**Additional filters**
+**Additional CLI test case filters**
 
 `<property>Operator<value>[|&<Expression>]`
 
