@@ -26,6 +26,8 @@ namespace TestAdapterTest
             {
                 case "name":
                 case "displayname": return test.DisplayName;
+
+                case "fqn":
                 case "fullyqualifiedname": return test.FullyQualifiedName;
 
                 case "command": return YameTestProperties.Get(test, "command");
