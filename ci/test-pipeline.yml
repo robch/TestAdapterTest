@@ -12,12 +12,14 @@ pool:
 variables:
   buildConfiguration: 'Release'
 
+steps:
+
 - task: DotNetCoreCLI@2
   inputs:
     command: 'custom'
     custom: 'tool'
     arguments: 'install --global Microsoft.CognitiveServices.Speech.CLI'
-
+    
 - task: DotNetCoreCLI@2
   inputs:
     command: 'test'
