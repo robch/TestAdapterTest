@@ -18,11 +18,11 @@ namespace TestAdapterTest
         {
             var start = DateTime.UtcNow;
             TestStart(test, frameworkHandle);
-            TestRun(test, out var stdOut, out var stdErr, out string errorMessage, out var additional, out var debugTrace, out var outcome);
+            TestRun(test, out var stdOut, out var stdErr, out string errorMessage, out string stackTrace, out var additional, out var debugTrace, out var outcome);
             TestStop(test, frameworkHandle, outcome);
             var stop = DateTime.UtcNow;
 
-            TestRecordResult(test, frameworkHandle, start, stop, stdOut, stdErr, errorMessage, additional, debugTrace, outcome);
+            TestRecordResult(test, frameworkHandle, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
             return outcome;
         }
 
@@ -34,7 +34,7 @@ namespace TestAdapterTest
             frameworkHandle.RecordStart(test);
         }
 
-        private static TestOutcome TestRun(TestCase test, out string stdOut, out string stdErr, out string errorMessage, out string additional, out string debugTrace, out TestOutcome outcome)
+        private static TestOutcome TestRun(TestCase test, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace, out TestOutcome outcome)
         {
             var command = YameTestProperties.Get(test, "command");
             var script = YameTestProperties.Get(test, "script");
@@ -45,14 +45,15 @@ namespace TestAdapterTest
 
             var simulate = YameTestProperties.Get(test, "simulate");
             return string.IsNullOrEmpty(simulate)
-                ? RunTestCase(test, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out errorMessage, out additional, out debugTrace, out outcome)
-                : SimulateTestCase(test, simulate, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out errorMessage, out additional, out debugTrace, out outcome);
+                ? RunTestCase(test, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace, out outcome)
+                : SimulateTestCase(test, simulate, command, script, expect, notExpect, logExpect, logNotExpect, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace, out outcome);
         }
 
-        private static TestOutcome RunTestCase(TestCase test, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, out string stdOut, out string stdErr, out string errorMessage, out string additional, out string debugTrace, out TestOutcome outcome)
+        private static TestOutcome RunTestCase(TestCase test, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace, out TestOutcome outcome)
         {
             additional = $"START TIME: {DateTime.UtcNow}";
             debugTrace = "";
+            stackTrace = script;
 
             Task<string> stdOutTask = null;
             Task<string> stdErrTask = null;
@@ -68,6 +69,8 @@ namespace TestAdapterTest
                 logNotExpect = WriteTextToTempFile(logNotExpect);
 
                 var args = GetStartArgs(command, script, expect, notExpect, logExpect, logNotExpect);
+                stackTrace = stackTrace ?? $"spx {args}";
+
                 var startInfo = new ProcessStartInfo("spx", args)
                 {
                     UseShellExecute = false,
@@ -95,6 +98,7 @@ namespace TestAdapterTest
                 outcome = TestOutcome.Failed;
                 errorMessage = ex.Message;
                 debugTrace = ex.ToString();
+                stackTrace = $"{stackTrace}\n{ex.StackTrace.ToString()}";
             }
             finally
             {
@@ -144,7 +148,7 @@ namespace TestAdapterTest
             return atArgs.TrimStart();
         }
 
-        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, out string stdOut, out string stdErr, out string errorMessage, out string additional, out string debugTrace, out TestOutcome outcome)
+        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace, out TestOutcome outcome)
         {
             var sb = new StringBuilder();
             sb.AppendLine($"command='{command?.Replace("\n", "\\n")}'");
@@ -158,6 +162,7 @@ namespace TestAdapterTest
             additional = "ADDITIONAL-INFO";
             debugTrace = "DEBUG-TRACE";
             errorMessage = "ERRORMESSAGE";
+            stackTrace = "STACKTRACE";
 
             outcome = OutcomeFromString(simulate);
             if (outcome == TestOutcome.Passed)
@@ -197,7 +202,7 @@ namespace TestAdapterTest
             frameworkHandle.RecordEnd(test, outcome);
         }
 
-        private static void TestRecordResult(TestCase test, IFrameworkHandle frameworkHandle, DateTime start, DateTime stop, string stdOut, string stdErr, string errorMessage, string additional, string debugTrace, TestOutcome outcome)
+        private static void TestRecordResult(TestCase test, IFrameworkHandle frameworkHandle, DateTime start, DateTime stop, string stdOut, string stdErr, string errorMessage, string stackTrace, string additional, string debugTrace, TestOutcome outcome)
         {
             Logger.Log($"YamlTestCaseRunner.TestRecordResult({test.DisplayName})");
 
@@ -207,6 +212,7 @@ namespace TestAdapterTest
             result.Messages.Add(new TestResultMessage(TestResultMessage.AdditionalInfoCategory, additional));
             result.Messages.Add(new TestResultMessage(TestResultMessage.DebugTraceCategory, debugTrace));
             result.ErrorMessage = errorMessage;
+            result.ErrorStackTrace = stackTrace;
             result.StartTime = start;
             result.EndTime = stop;
             result.Duration = stop - start;
