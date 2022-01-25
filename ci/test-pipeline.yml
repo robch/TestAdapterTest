@@ -1,8 +1,3 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
 trigger:
 - main
 
@@ -11,16 +6,47 @@ pool:
 
 variables:
   buildConfiguration: 'Debug'
+  SPXBuild_id: 26702669 # set to 0 to use `dotnet tool install` lastest
 
 steps:
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'custom'
-    custom: 'tool'
-    arguments: 'install --global Microsoft.CognitiveServices.Speech.CLI'
-    
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'test'
-    arguments: '--configuration $(buildConfiguration)'
+  # -----------------------------------------------------------------------------
+  # Download the SPX artifact and .net executables
+  # -----------------------------------------------------------------------------
+  - task: DownloadBuildArtifacts@0
+    displayName: Download SPX build artifact (executable)
+    inputs:
+      buildType: specific
+      project: 'e71f1362-9c7d-488b-99c7-3376db8d3302' # Skyman
+      pipeline: 13649 # Azure-Samples.cognitive-services-speech-tools
+      buildVersionToDownload: specific
+      specificBuildWithTriggering: true
+      buildId: $(SPXBuild_id)
+      downloadType: specific
+      downloadPath: spxBuild
+    condition: gt(variables['SPXBuild_id'], 0) # only if we have a build_id
+
+  - task: ExtractFiles@1
+    displayName: Extract SPX .netcore 3.1 executable
+    inputs:
+      archiveFilePatterns: '**/spx-netcore31-win-x64.zip'
+      destinationFolder: $(System.DefaultWorkingDirectory)
+    condition: gt(variables['SPXBuild_id'], 0) # only if we have a build_id
+
+  # -----------------------------------------------------------------------------
+  # OR ... install it as a global .net tool
+  # -----------------------------------------------------------------------------
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'custom'
+      custom: 'tool'
+      arguments: 'install --global Microsoft.CognitiveServices.Speech.CLI'
+    condition: eq(variables['SPXBuild_id'], 0) # only if we have NO build_id
+
+  # -----------------------------------------------------------------------------
+  # Run the tests (this will also publish the results)
+  # -----------------------------------------------------------------------------
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'test'
+      arguments: '--configuration $(buildConfiguration)'
