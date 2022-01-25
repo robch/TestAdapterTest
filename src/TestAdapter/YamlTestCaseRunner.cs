@@ -86,8 +86,7 @@ namespace TestAdapterTest
                     : TestOutcome.Failed;
 
                 errorMessage = $"EXIT CODE: {process.ExitCode}";
-                additional = ""
-                    + $"START TIME: {process.StartTime}"
+                additional = additional
                     + $" STOP TIME: {process.ExitTime}"
                     + $" EXIT CODE: {process.ExitCode}";
             }
