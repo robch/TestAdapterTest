@@ -78,6 +78,7 @@ jobs:
           find
           find spx
           find ~/.dotnet/tools/spx
+          cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
           ./spx config local @region --set $(region)
           ./spx config local @key --set $(key)
           ./spx config local @
@@ -89,6 +90,7 @@ jobs:
         script: |
           dir /s/b
           dir spx* /s/b
+          cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1
           spx config local @region --set $(region)
           spx config local @key --set $(key)
           spx config local @
