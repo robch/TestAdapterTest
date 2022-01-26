@@ -52,7 +52,7 @@ jobs:
           archiveFilePatterns: '**/spx-netcore31-win-x64.zip'
         ${{ else }}:
           archiveFilePatterns: '**/spx-netcore31-linux-x64.zip'
-        destinationFolder: $(System.DefaultWorkingDirectory)
+        destinationFolder: $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
         cleanDestinationFolder: false
       condition: gt( ${{ parameters.SPXBuild_id }} , 0) # only if we have a build_id
 
