@@ -16,16 +16,16 @@ parameters:
   - 'Debug'
   - 'Release'
 - name: 'SPXBuild_id'
-  type: int
+  type: number
   default: 26702669
   values:
   - 0
   - 26702669
 
 jobs:
-- job: 'SPX Yaml Test Pipeline'
+- job: SPX_Yaml_Test_Pipeline
   pool:
-    ${{ if eq(parameters.agentPool, '') }}:
+    ${{ if not(eq(parameters.vmImage, '')) }}:
       vmImage: ${{ parameters.vmImage }}
 
   steps:
