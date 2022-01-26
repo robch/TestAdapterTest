@@ -25,9 +25,9 @@ parameters:
 variables:
 - name: unzipPattern
   ${{ if eq(parameters.vmImage, 'windows-latest') }}:
-    '**/spx-netcore31-win-x64.zip'
+    value: '**/spx-netcore31-win-x64.zip'
   ${{ else }}:
-    '**/spx-netcore31-linux-x64.zip'
+    value: '**/spx-netcore31-linux-x64.zip'
 
 jobs:
 - job: SPX_Yaml_Test_Pipeline
