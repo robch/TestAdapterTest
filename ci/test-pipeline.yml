@@ -23,10 +23,11 @@ parameters:
   - 26702669
   
 variables:
-  ${{ if eq(parameters.image, 'windows-latest') }}:
-    unzipPattern: '**/spx-netcore31-win-x64.zip'
+- name: unzipPattern
+  ${{ if eq(parameters.vmImage, 'windows-latest') }}:
+    value: '**/spx-netcore31-win-x64.zip'
   ${{ else }}
-    unzipPattern: '**/spx-netcore31-linux-x64.zip'
+    value: '**/spx-netcore31-linux-x64.zip'
 
 jobs:
 - job: SPX_Yaml_Test_Pipeline
