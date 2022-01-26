@@ -17,11 +17,10 @@ parameters:
   - 'Release'
 - name: 'SPXBuild_id'
   type: number
-  default: 26774379
+  default: 26783976
   values:
   - 0
-  - 26702669
-  - 26774379
+  - 26783976
 
 jobs:
 - job: SPX_Yaml_Test_Pipeline
@@ -31,10 +30,21 @@ jobs:
   steps:
 
     # -----------------------------------------------------------------------------
-    # Download the SPX artifact and .net executables
+    # GET SPX - NO SPXBuild_Id - Install via `dotnet tool install`
+    # -----------------------------------------------------------------------------
+    - task: DotNetCoreCLI@2
+      displayName: GET SPX - Installing via `dotnet tool install`
+      inputs:
+        command: 'custom'
+        custom: 'tool'
+        arguments: 'install --global Microsoft.CognitiveServices.Speech.CLI'
+      condition: eq( ${{ parameters.SPXBuild_id }} , 0) # only if we have NO build_id
+
+    # -----------------------------------------------------------------------------
+    # GET SPX - Have SPXBuild_Id - Download artifact and unzip
     # -----------------------------------------------------------------------------
     - task: DownloadBuildArtifacts@0
-      displayName: Download SPX build artifact (executable)
+      displayName: GET SPX - Have SPXBuild_id - DOWNLOAD
       inputs:
         buildType: specific
         project: 'e71f1362-9c7d-488b-99c7-3376db8d3302' # Skyman
@@ -47,7 +57,7 @@ jobs:
       condition: gt( ${{ parameters.SPXBuild_id }} , 0) # only if we have a build_id
 
     - task: ExtractFiles@1
-      displayName: Extract SPX .netcore 3.1 executable
+      displayName: GET SPX - Have SPXBuild_id - EXTRACT
       inputs:
         ${{ if eq(parameters.vmImage, 'windows-latest') }}:
           archiveFilePatterns: '**/spx-netcore31-win-x64.zip'
@@ -57,8 +67,11 @@ jobs:
         cleanDestinationFolder: false
       condition: gt( ${{ parameters.SPXBuild_id }} , 0) # only if we have a build_id
 
+    # -----------------------------------------------------------------------------
+    # FIND SPX and SHOW FILES
+    # -----------------------------------------------------------------------------
     - task: Bash@3
-      displayName: Update path, and find CLI in filesystem
+      displayName: FIND SPX and SHOW FILES - Linux
       inputs:
         script: |
           echo '##vso[task.setvariable variable=path]$(PATH):~/.dotnet/tools'
@@ -68,29 +81,33 @@ jobs:
       condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
 
     - task: CmdLine@2
-      displayName: Update path, and find CLI in filesystem
+      displayName: FIND SPX and SHOW FILES - Windows
       inputs:
         script: |
           dir /s/b
           dir spx* /s/b
       condition: eq('${{ parameters.vmImage }}', 'windows-latest')
 
-
-    # -----------------------------------------------------------------------------
-    # OR ... install it as a global .net tool
-    # -----------------------------------------------------------------------------
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: 'custom'
-        custom: 'tool'
-        arguments: 'install --global Microsoft.CognitiveServices.Speech.CLI'
-      condition: eq( ${{ parameters.SPXBuild_id }} , 0) # only if we have NO build_id
-
     # -----------------------------------------------------------------------------
     # Run the tests (this will also publish the results)
     # -----------------------------------------------------------------------------
     - task: DotNetCoreCLI@2
+      displayName: RUN TESTS - Restore
+      inputs:
+        command: 'restore'
+        arguments: '--configuration ${{ parameters.buildConfiguration }}'
+        workingDirectory: $(System.DefaultWorkingDirectory)
+
+    - task: DotNetCoreCLI@2
+      displayName: RUN TESTS - Build
+      inputs:
+        command: 'build'
+        arguments: '--no-restore --configuration ${{ parameters.buildConfiguration }}'
+        workingDirectory: $(System.DefaultWorkingDirectory)
+
+    - task: DotNetCoreCLI@2
+      displayName: RUN TESTS - Test
       inputs:
         command: 'test'
-        arguments: '--configuration ${{ parameters.buildConfiguration }}'
+        arguments: '--no-build --no-restore --configuration ${{ parameters.buildConfiguration }}'
         workingDirectory: $(System.DefaultWorkingDirectory)
