@@ -68,7 +68,7 @@ jobs:
           find
           find spx
           find ~/.dotnet/tools/spx
-      condition: not(eq(parameters.image, 'windows-latest'))
+      condition: not(eq( ${{ parameters.vmImage }}, 'windows-latest'))
 
 
     # -----------------------------------------------------------------------------
