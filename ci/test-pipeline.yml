@@ -7,10 +7,7 @@ variables:
   SPXBuild_id: 26702669 # set to 0 to use `dotnet tool install` lastest
 
 pool:
-${{ if eq(variables['agentOS'], 'Windows') }}:
   vmImage: windows-latest
-${{ else }}:
-  vmImage: ubuntu-latest
 
 steps:
 
