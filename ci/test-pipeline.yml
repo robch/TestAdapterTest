@@ -21,12 +21,17 @@ parameters:
   values:
   - 0
   - 26702669
+  
+variables:
+  ${{ if eq(parameters.image, 'windows-latest') }}:
+    unzipPattern: '**/spx-netcore31-win-x64.zip'
+  ${{ else }}
+    unzipPattern: '**/spx-netcore31-linux-x64.zip'
 
 jobs:
 - job: SPX_Yaml_Test_Pipeline
   pool:
-    ${{ if not(eq(parameters.vmImage, '')) }}:
-      vmImage: ${{ parameters.vmImage }}
+    vmImage: ${{ parameters.vmImage }}
 
   steps:
 
@@ -49,10 +54,7 @@ jobs:
     - task: ExtractFiles@1
       displayName: Extract SPX .netcore 3.1 executable
       inputs:
-        ${{ if eq(parameters.image, 'windows-latest') }}:
-          archiveFilePatterns: '**/spx-netcore31-win-x64.zip'
-        ${{ if not(eq(parameters.image, 'windows-latest')) }}:
-          archiveFilePatterns: '**/spx-netcore31-linux-x64.zip'
+        archiveFilePatterns: $(variables.unzipPattern)
         destinationFolder: $(System.DefaultWorkingDirectory)
         cleanDestinationFolder: false
       condition: gt( ${{ parameters.SPXBuild_id }} , 0) # only if we have a build_id
