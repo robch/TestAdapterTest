@@ -71,7 +71,7 @@ jobs:
       inputs:
         script: |
           dir /s/b
-          dir spx /s/b
+          dir spx* /s/b
       condition: eq('${{ parameters.vmImage }}', 'windows-latest')
 
 
