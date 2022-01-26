@@ -98,7 +98,7 @@ namespace TestAdapterTest
                 outcome = TestOutcome.Failed;
                 errorMessage = ex.Message;
                 debugTrace = ex.ToString();
-                stackTrace = $"{stackTrace}\n{ex.StackTrace.ToString()}";
+                stackTrace = $"{stackTrace}\n{ex.StackTrace.ToString()}\n{ExtraDebugInfo()}";
             }
             finally
             {
@@ -218,6 +218,22 @@ namespace TestAdapterTest
             result.Duration = stop - start;
 
             frameworkHandle.RecordResult(result);
+        }
+
+        private static string ExtraDebugInfo()
+        {
+            var sb = new StringBuilder();
+
+            var cwd = Directory.GetCurrentDirectory();
+            sb.AppendLine($"CURRENT DIRECTORY: {cwd}");
+
+            var files = Directory.GetFiles(cwd, "*", SearchOption.AllDirectories);
+            foreach (var file in files)
+            {
+                sb.AppendLine(file);
+            }
+
+            return sb.ToString();
         }
 
         #endregion
