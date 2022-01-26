@@ -44,7 +44,6 @@ steps:
         find 
         find spx
         find ~/.dotnet/tools/spx
-      workingDirectory: $(System.DefaultWorkingDirectory)
 
 
   # -----------------------------------------------------------------------------
