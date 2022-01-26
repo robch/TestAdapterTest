@@ -1,13 +1,13 @@
 trigger:
 - main
 
-variables:
-  agentOS: 'Windows'
-  buildConfiguration: 'Debug'
-  SPXBuild_id: 26702669 # set to 0 to use `dotnet tool install` lastest
-
 pool:
   vmImage: windows-latest
+  # vmImage: ubuntu-latest
+
+variables:
+  buildConfiguration: 'Debug'
+  SPXBuild_id: 26702669 # set to 0 to use `dotnet tool install` lastest
 
 steps:
 
@@ -30,10 +30,8 @@ steps:
   - task: ExtractFiles@1
     displayName: Extract SPX .netcore 3.1 executable
     inputs:
-    ${{ if eq(variables['agentOS'], 'Windows') }}:
       archiveFilePatterns: '**/spx-netcore31-win-x64.zip'
-    ${{ else }}:
-      archiveFilePatterns: '**/spx-netcore31-linux-x64.zip'
+      # archiveFilePatterns: '**/spx-netcore31-linux-x64.zip'
       destinationFolder: $(System.DefaultWorkingDirectory)
       cleanDestinationFolder: false
     condition: gt(variables['SPXBuild_id'], 0) # only if we have a build_id
@@ -43,10 +41,10 @@ steps:
     inputs:
       script: |
         echo '##vso[task.setvariable variable=path]$(PATH):~/.dotnet/tools'
+        find 
         find spx
         find ~/.dotnet/tools/spx
       workingDirectory: $(System.DefaultWorkingDirectory)
-    condition: ne(variables['agentOS'], 'Windows') # only if we're on Linux
 
 
   # -----------------------------------------------------------------------------
