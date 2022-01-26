@@ -55,7 +55,7 @@ jobs:
     - task: ExtractFiles@1
       displayName: Extract SPX .netcore 3.1 executable
       inputs:
-        archiveFilePatterns: $(variables.unzipPattern)
+        archiveFilePatterns: $(parameters.unzipPattern)
         destinationFolder: $(System.DefaultWorkingDirectory)
         cleanDestinationFolder: false
       condition: gt( ${{ parameters.SPXBuild_id }} , 0) # only if we have a build_id
