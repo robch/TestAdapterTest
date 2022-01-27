@@ -71,10 +71,32 @@ jobs:
     # FIND and CONFIGURE SPX
     # -----------------------------------------------------------------------------
     - task: Bash@3      
+      displayName: FIND SPX and CONFIG - Linux
+      inputs:
+        script: |
+          echo ---
+          set |grep -E -x --regexp="[a-zA-Z0-9_]+=.*"
+          echo ---
+          find
+          find spx*
+          find ~/.dotnet/tools/spx*
+          echo ---
+          echo cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
+          cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
+          echo ls
+          ls
+          echo ---
+          echo PATH
+          echo $(PATH)
+          echo find spx*
+          find spx*
+      condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
+
+    - task: Bash@3      
       displayName: UPDATE PATH - Linux
       inputs:
         script: |
-          echo '##vso[task.setvariable variable=path]$(PATH):$(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx:~/.dotnet/tools'
+          echo '##vso[task.setvariable variable=path]$(PATH):$(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx:~/.dotnet/tools:'
       condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
 
     - task: Bash@3      
