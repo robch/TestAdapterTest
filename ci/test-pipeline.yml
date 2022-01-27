@@ -63,7 +63,7 @@ jobs:
           archiveFilePatterns: '**/spx-netcore31-win-x64.zip'
         ${{ else }}:
           archiveFilePatterns: '**/spx-netcore31-linux-x64.zip'
-        destinationFolder: $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
+        destinationFolder: $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx
         cleanDestinationFolder: false
       condition: gt( ${{ parameters.SPXBuild_id }} , 0) # only if we have a build_id
 
@@ -71,21 +71,34 @@ jobs:
     # FIND and CONFIGURE SPX
     # -----------------------------------------------------------------------------
     - task: Bash@3      
-      displayName: FIND SPX and SHOW FILES - Linux
+      displayName: UPDATE PATH - Linux
       inputs:
         script: |
-          echo '##vso[task.setvariable variable=path]$(PATH):~/.dotnet/tools'
+          echo '##vso[task.setvariable variable=path]$(PATH):$(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx:~/.dotnet/tools'
+      condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
+
+    - task: Bash@3      
+      displayName: FIND SPX and CONFIG - Linux
+      inputs:
+        script: |
           find
           find spx
           find ~/.dotnet/tools/spx
           cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
-          ./spx config local @region --set $(region)
-          ./spx config local @key --set $(key)
-          ./spx config local @
+          spx config local @region --set $(region)
+          spx config local @key --set $(key)
+          spx config local @
       condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
 
     - task: CmdLine@2
-      displayName: FIND SPX and SHOW FILES - Windows
+      displayName: UPDATE PATH - Windows
+      inputs:
+        script: |
+          echo '##vso[task.setvariable variable=path]$(PATH);$(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx'
+      condition: eq('${{ parameters.vmImage }}', 'windows-latest')
+
+    - task: CmdLine@2
+      displayName: FIND SPX and CONFIG - Windows
       inputs:
         script: |
           dir /s/b
