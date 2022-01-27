@@ -69,7 +69,7 @@ jobs:
 
     - script: 'chmod u+x $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx/spx'
       displayName: GET SPX - Have SPXBuild_id - CHMOD
-      condition: and(gt( ${{ parameters.SPXBuild_id }} , 0), eq('${{ parameters.vmImage }}', 'windows-latest'))
+      condition: and(gt( ${{ parameters.SPXBuild_id }} , 0), not(eq('${{ parameters.vmImage }}', 'windows-latest')))
 
     # -----------------------------------------------------------------------------
     # FIND and CONFIGURE SPX (LINUX)
