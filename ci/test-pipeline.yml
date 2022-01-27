@@ -102,11 +102,18 @@ jobs:
       displayName: FIND SPX and CONFIG - Windows
       inputs:
         script: |
+          echo ---
+          set
+          echo ---
           dir /s/b
           dir spx* /s/b
-          set
+          echo ---
           cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1
+          dir /s/b
+          dir spx* /s/b
+          echo ---
           where spx*
+          echo ---
           spx.exe config local @region --set $(region)
           spx.exe config local @key --set $(key)
           spx.exe config local @
