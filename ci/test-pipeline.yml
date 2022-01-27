@@ -29,6 +29,15 @@ jobs:
 
   steps:
 
+
+
+    - script: 'env | sort'
+      displayName: "echo Environment variables"
+    - script: 'find'
+      displayName: "show files"
+
+
+
     # -----------------------------------------------------------------------------
     # GET SPX - NO SPXBuild_Id - Install via `dotnet tool install`
     # -----------------------------------------------------------------------------
