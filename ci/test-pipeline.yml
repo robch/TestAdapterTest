@@ -67,29 +67,13 @@ jobs:
         cleanDestinationFolder: false
       condition: gt( ${{ parameters.SPXBuild_id }} , 0) # only if we have a build_id
 
-    # -----------------------------------------------------------------------------
-    # FIND and CONFIGURE SPX
-    # -----------------------------------------------------------------------------
-    - script: |
-        echo ---
-        set |grep -E -x --regexp="[a-zA-Z0-9_]+=.*"
-        echo ---
-        find
-        find spx*
-        find ~/.dotnet/tools/spx*
-        echo ---
-        echo cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
-        cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
-        echo ls
-        ls
-        echo ---
-        echo PATH
-        echo $(PATH)
-        echo find spx*
-        find spx*
-      displayName: DEBUGGING ... FIND SPX and CONFIG - Linux
-      condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
+    - script: 'chmod u+x $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx/spx'
+      displayName: GET SPX - Have SPXBuild_id - CHMOD
+      condition: and(gt( ${{ parameters.SPXBuild_id }} , 0), eq('${{ parameters.vmImage }}', 'windows-latest'))
 
+    # -----------------------------------------------------------------------------
+    # FIND and CONFIGURE SPX (LINUX)
+    # -----------------------------------------------------------------------------
     - script: |
         echo '##vso[task.setvariable variable=path]$(PATH):$(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx:~/.dotnet/tools:'
       displayName: UPDATE PATH - Linux
@@ -119,6 +103,9 @@ jobs:
       displayName: FIND SPX and CONFIG - Linux
       condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
 
+    # -----------------------------------------------------------------------------
+    # FIND and CONFIGURE SPX (WINDOWS)
+    # -----------------------------------------------------------------------------
     - task: CmdLine@2
       displayName: UPDATE PATH - Windows
       inputs:
