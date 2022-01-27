@@ -17,10 +17,10 @@ parameters:
   - 'Release'
 - name: 'SPXBuild_id'
   type: number
-  default: 26792892
+  default: 26794886
   values:
   - 0
-  - 26792892
+  - 26794886
 
 jobs:
 - job: SPX_Yaml_Test_Pipeline
@@ -84,6 +84,7 @@ jobs:
           find
           find spx
           find ~/.dotnet/tools/spx
+          set |grep -E -x --regexp="[a-zA-Z0-9_]+=.*"
           cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
           spx config local @region --set $(region)
           spx config local @key --set $(key)
@@ -103,6 +104,7 @@ jobs:
         script: |
           dir /s/b
           dir spx* /s/b
+          set
           cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1
           spx config local @region --set $(region)
           spx config local @key --set $(key)
