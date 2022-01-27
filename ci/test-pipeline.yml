@@ -82,6 +82,7 @@ jobs:
     - task: Bash@3      
       displayName: FIND SPX and CONFIG - Linux
       inputs:
+        workingDirectory: $(System.DefaultWorkingDirectory)
         script: |
           echo ---
       condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
