@@ -75,21 +75,6 @@ jobs:
       inputs:
         script: |
           echo ---
-          set |grep -E -x --regexp="[a-zA-Z0-9_]+=.*"
-          echo ---
-          find
-          find spx*
-          find ~/.dotnet/tools/spx*
-          echo ---
-          echo cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
-          cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
-          echo ls
-          ls
-          echo ---
-          echo PATH
-          echo $(PATH)
-          echo find spx*
-          find spx*
       condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
 
     - task: Bash@3      
