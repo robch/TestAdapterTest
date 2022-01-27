@@ -106,9 +106,10 @@ jobs:
           dir spx* /s/b
           set
           cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1
-          spx config local @region --set $(region)
-          spx config local @key --set $(key)
-          spx config local @
+          where spx*
+          spx.exe config local @region --set $(region)
+          spx.exe config local @key --set $(key)
+          spx.exe config local @
       condition: eq('${{ parameters.vmImage }}', 'windows-latest')
 
     # -----------------------------------------------------------------------------
