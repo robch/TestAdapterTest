@@ -108,7 +108,11 @@ jobs:
           dir /s/b
           dir spx* /s/b
           echo ---
+          echo cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1
           cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1
+          echo dir *
+          dir *
+          echo ---
           dir /s/b
           dir spx* /s/b
           echo ---
