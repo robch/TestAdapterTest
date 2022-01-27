@@ -116,6 +116,9 @@ jobs:
           dir /s/b
           dir spx* /s/b
           echo ---
+          echo PATH
+          set PATH
+          echo where spx*
           where spx*
           echo ---
           spx.exe config local @region --set $(region)
