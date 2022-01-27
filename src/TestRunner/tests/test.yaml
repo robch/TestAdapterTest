@@ -1,4 +1,7 @@
-﻿- name: simple help test
+﻿- name: simulate fail
+  simulate: Failed
+
+- name: simple help test
   script: spx
   expect: |
     (?# ---------- BANNER)
