@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +23,11 @@ namespace TestAdapterTest
             TestStop(test, frameworkHandle, outcome);
             var stop = DateTime.UtcNow;
 
-            TestRecordResult(test, frameworkHandle, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
+            #if DEBUG
+                additional += outcome == TestOutcome.Failed ? $"\nEXTRA: {ExtraDebugInfo()}" : "";
+                TestRecordResult(test, frameworkHandle, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
+            #endif
+
             return outcome;
         }
 
@@ -98,7 +103,7 @@ namespace TestAdapterTest
                 outcome = TestOutcome.Failed;
                 errorMessage = ex.Message;
                 debugTrace = ex.ToString();
-                stackTrace = $"{stackTrace}\n{ex.StackTrace.ToString()}\n{ExtraDebugInfo()}";
+                stackTrace = $"{stackTrace}\n{ex.StackTrace}";
             }
             finally
             {
@@ -224,13 +229,24 @@ namespace TestAdapterTest
         {
             var sb = new StringBuilder();
 
-            var cwd = Directory.GetCurrentDirectory();
-            sb.AppendLine($"CURRENT DIRECTORY: {cwd}");
+            var cwd = new DirectoryInfo(Directory.GetCurrentDirectory());
+            sb.AppendLine($"CURRENT DIRECTORY: {cwd.FullName}");
 
-            var files = Directory.GetFiles(cwd, "*", SearchOption.AllDirectories);
+            var files = cwd.GetFiles("*", SearchOption.AllDirectories);
             foreach (var file in files)
             {
-                sb.AppendLine(file);
+                sb.AppendLine($"{file.Length,10}   {file.CreationTime.Date:MM/dd/yyyy}   {file.CreationTime:hh:mm:ss tt}   {file.FullName}");
+            }
+
+            var variables = Environment.GetEnvironmentVariables();
+            var keys = new List<string>(variables.Count);
+            foreach (var key in variables.Keys) keys.Add(key as string);
+
+            keys.Sort();
+            foreach (var key in keys)
+            {
+                var value = variables[key] as string;
+                sb.AppendLine($"{key,-20}  {value}");
             }
 
             return sb.ToString();

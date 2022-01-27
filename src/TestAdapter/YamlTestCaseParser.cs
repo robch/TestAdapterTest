@@ -53,10 +53,13 @@ namespace TestAdapterTest
 
         private static TestCase GetTestFromNode(string source, FileInfo file, YamlMappingNode mapping, string area, string @class)
         {
+            string simulate = GetScalarString(mapping, "simulate");
+            var simulating = !string.IsNullOrEmpty(simulate);
+
             string command = GetScalarString(mapping, "command");
             string script = GetScalarString(mapping, "script");
             var bothOrNeither = (command == null) == (script == null);
-            if (bothOrNeither) return null;
+            if (bothOrNeither && !simulating) return null;
 
             string fullyQualifiedName = GetFullyQualifiedName(mapping, area, @class)
                 ?? GetFullyQualifiedName(area, @class, $"Expected YAML node ('name') at {file.FullName}({mapping.Start.Line})");
@@ -70,12 +73,12 @@ namespace TestAdapterTest
 
             SetTestCaseProperty(test, "command", command);
             SetTestCaseProperty(test, "script", script);
+            SetTestCaseProperty(test, "simulate", simulate);
 
             SetTestCaseProperty(test, "expect", mapping, "expect");
             SetTestCaseProperty(test, "not-expect", mapping, "not-expect");
             SetTestCaseProperty(test, "log-expect", mapping, "log-expect");
             SetTestCaseProperty(test, "log-not-expect", mapping, "log-not-expect");
-            SetTestCaseProperty(test, "simulate", mapping, "simulate");
 
             CheckInvalidTestCaseNodes(file, mapping, test);
             return test;
