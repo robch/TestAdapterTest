@@ -4,7 +4,7 @@ trigger:
 parameters:
 - name: vmImage
   type: string
-  default: windows-latest
+  default: ubuntu-latest
   values:
   - windows-latest
   - ubuntu-latest
@@ -81,11 +81,23 @@ jobs:
       displayName: FIND SPX and CONFIG - Linux
       inputs:
         script: |
-          find
-          find spx
-          find ~/.dotnet/tools/spx
+          echo ---
           set |grep -E -x --regexp="[a-zA-Z0-9_]+=.*"
+          echo ---
+          find
+          find spx*
+          find ~/.dotnet/tools/spx*
+          echo ---
+          echo cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
           cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
+          echo ls
+          ls
+          echo ---
+          echo PATH
+          echo $(PATH)
+          echo find spx*
+          find spx*
+          echo ---
           spx config local @region --set $(region)
           spx config local @key --set $(key)
           spx config local @
