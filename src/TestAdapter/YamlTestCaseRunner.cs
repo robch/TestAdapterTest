@@ -65,7 +65,9 @@ namespace TestAdapterTest
 
             try
             {
-                script = WriteTextToTempFile(script);
+                var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+                script = WriteTextToTempFile(script, isWindows ? "cmd" : null);
+
                 expect = WriteTextToTempFile(expect);
                 notExpect = WriteTextToTempFile(notExpect);
                 logExpect = WriteTextToTempFile(logExpect);
