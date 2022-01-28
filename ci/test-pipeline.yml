@@ -17,10 +17,10 @@ parameters:
   - 'Release'
 - name: 'SPXBuild_id'
   type: number
-  default: 26794886
+  default: 26811836
   values:
   - 0
-  - 26794886
+  - 26811836
 
 jobs:
 - job: SPX_Yaml_Test_Pipeline
