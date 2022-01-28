@@ -30,6 +30,18 @@ jobs:
   steps:
 
     # -----------------------------------------------------------------------------
+    # INSTALL DEPENDENCIES (GStreamer)
+    # -----------------------------------------------------------------------------
+    - script: |
+        sudo apt install libgstreamer1.0-0 \
+        gstreamer1.0-plugins-base \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-ugly
+      displayName: INSTALL DEPENDENCIES (GStreamer)
+      condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
+
+    # -----------------------------------------------------------------------------
     # GET SPX - NO SPXBuild_Id - Install via `dotnet tool install`
     # -----------------------------------------------------------------------------
     - task: DotNetCoreCLI@2      
