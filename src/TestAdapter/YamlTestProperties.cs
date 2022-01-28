@@ -23,11 +23,8 @@ namespace TestAdapterTest
 
         public static string Get(TestCase test, string name, string defaultValue = null)
         {
-            Logger.Log($"TestCaseProperties.Get('{name}')");
-
             var value = test.GetPropertyValue(properties[name], defaultValue);
-            Logger.Log($"TestCaseProperties.Get('{name}') = '{value?.Replace("\n", "\\n")}'");
-
+            Logger.LogIf(!string.IsNullOrEmpty(value), $"TestCaseProperties.Get('{name}') = '{value?.Replace("\n", "\\n")}'");
             return value;
         }
 

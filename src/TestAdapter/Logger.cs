@@ -21,12 +21,77 @@ namespace TestAdapterTest
 
         public static void Log(string text)
         {
-            File.AppendAllText("log", $"{DateTime.Now}: {text}\n");
+            LogInfo(text);
+            Logger.DbgTraceInfo(text);
+        }
 
+        public static void LogIf(bool log, string text)
+        {
+            if (log) Log(text);
+        }
+
+        #region log methods
+
+        public static void LogInfo(string text)
+        {
+            File.AppendAllText("log", $"{DateTime.Now}: INFO: {text}\n");
+        }
+
+        public static void LogWarning(string text)
+        {
+            File.AppendAllText("log", $"{DateTime.Now}: WARNING: {text}\n");
+        }
+
+        public static void LogError(string text)
+        {
+            File.AppendAllText("log", $"{DateTime.Now}: ERROR: {text}\n");
+        }
+
+        #endregion
+
+        #region dbg trace methods
+
+        public static void DbgTraceInfo(string text)
+        {
             #if DEBUG
-            logger?.SendMessage(TestMessageLevel.Informational, $"{DateTime.Now}: {text}");
+            TraceInfo(text);
             #endif
         }
+
+        public static void DbgTraceWarning(string text)
+        {
+            #if DEBUG
+            TraceWarning(text);
+            #endif
+        }
+
+        public static void DbgTraceError(string text)
+        {
+            #if DEBUG
+            TraceError(text);
+            #endif
+        }
+
+        #endregion
+
+        #region trace methods
+
+        public static void TraceInfo(string text)
+        {
+            logger?.SendMessage(TestMessageLevel.Informational, $"{DateTime.Now}: {text}");
+        }
+
+        public static void TraceWarning(string text)
+        {
+            logger?.SendMessage(TestMessageLevel.Warning, $"{DateTime.Now}: {text}");
+        }
+
+        public static void TraceError(string text)
+        {
+            logger?.SendMessage(TestMessageLevel.Error, $"{DateTime.Now}: {text}");
+        }
+
+        #endregion
 
         #region private data
         private static IMessageLogger logger = null;

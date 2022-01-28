@@ -1,5 +1,22 @@
-﻿- name: simulate fail
-  simulate: Failed
+﻿- name: simulate pass
+  simulate: Passed
+
+- name: simulate skipped
+  simulate: Skipped
+
+- name: try1a command ... spx
+  command: spx
+
+- name: try1b command ... spx run --script "echo hello"
+  command: spx run --script "echo hello"
+  expect: hello
+
+- name: try2a script ... spx
+  script: spx
+
+- name: try2b script ... spx run --script "echo hello"
+  script: spx run --script "echo hello"
+  expect: hello
 
 - name: simple help test
   script: spx

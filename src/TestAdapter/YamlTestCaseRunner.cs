@@ -24,10 +24,10 @@ namespace TestAdapterTest
             var stop = DateTime.UtcNow;
 
             #if DEBUG
-                additional += outcome == TestOutcome.Failed ? $"\nEXTRA: {ExtraDebugInfo()}" : "";
-                TestRecordResult(test, frameworkHandle, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
+            additional += outcome == TestOutcome.Failed ? $"\nEXTRA: {ExtraDebugInfo()}" : "";
             #endif
 
+            TestRecordResult(test, frameworkHandle, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
             return outcome;
         }
 
@@ -65,18 +65,17 @@ namespace TestAdapterTest
 
             try
             {
-                var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-                script = WriteTextToTempFile(script, isWindows ? "cmd" : "sh");
-
+                script = WriteTextToTempFile(script);
                 expect = WriteTextToTempFile(expect);
                 notExpect = WriteTextToTempFile(notExpect);
                 logExpect = WriteTextToTempFile(logExpect);
                 logNotExpect = WriteTextToTempFile(logNotExpect);
 
-                var args = GetStartArgs(command, script, expect, notExpect, logExpect, logNotExpect);
-                stackTrace = stackTrace ?? $"spx {args}";
+                var startArgs = GetStartInfo(out string startProcess, command, script, expect, notExpect, logExpect, logNotExpect);
+                stackTrace = stackTrace ?? $"{startProcess} {startArgs}";
 
-                var startInfo = new ProcessStartInfo("spx", args)
+                Logger.Log($"Process.Start('{startProcess} {startArgs}')");
+                var startInfo = new ProcessStartInfo(startProcess, startArgs)
                 {
                     UseShellExecute = false,
                     RedirectStandardError = true,
@@ -131,16 +130,28 @@ namespace TestAdapterTest
                 }
 
                 File.WriteAllText(tempFile, text);
+
+                #if DEBUG
+                    var content = File.ReadAllText(tempFile).Replace("\n", "\\n");
+                    Logger.Log($"FILE: {tempFile}: '{content}'");
+                #endif
+
                 return tempFile;
             }
             return null;
         }
 
-        private static string GetStartArgs(string command, string script, string expect, string notExpect, string logExpect, string logNotExpect)
+        private static string GetStartInfo(out string startProcess, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect)
         {
-            return !string.IsNullOrEmpty(command) || string.IsNullOrEmpty(script)
-                ? $"{command} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}"
-                : $"quiet run --script {script} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}";
+            startProcess = "spx";
+            
+            var isCommand = !string.IsNullOrEmpty(command) || string.IsNullOrEmpty(script);
+            if (isCommand) return $"{command} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}";
+
+            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            return isWindows
+                ? $"quiet run --cmd --script {script} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}"
+                : $"quiet run --process /bin/bash --pre.script -l --script {script} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}";
         }
 
         private static string GetAtArgs(string expect, string notExpect, string logExpect, string logNotExpect)
@@ -221,6 +232,16 @@ namespace TestAdapterTest
             result.StartTime = start;
             result.EndTime = stop;
             result.Duration = stop - start;
+
+            Logger.Log("----------------------------\n\n");
+            Logger.Log($"    STDOUT: {stdOut}");
+            Logger.Log($"    STDERR: {stdErr}");
+            Logger.Log($"     STACK: {stackTrace}");
+            Logger.Log($"     ERROR: {errorMessage}");
+            Logger.Log($"   OUTCOME: {outcome}");
+            Logger.Log($"ADDITIONAL: {additional}");
+            Logger.Log($"DEBUGTRACE: {debugTrace}");
+            Logger.Log("----------------------------\n\n");
 
             frameworkHandle.RecordResult(result);
         }
