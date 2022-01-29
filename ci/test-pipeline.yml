@@ -4,7 +4,7 @@ trigger:
 parameters:
 - name: vmImage
   type: string
-  default: ubuntu-latest
+  default: windows-latest
   values:
   - windows-latest
   - ubuntu-latest
@@ -39,8 +39,26 @@ jobs:
         gstreamer1.0-plugins-good \
         gstreamer1.0-plugins-bad \
         gstreamer1.0-plugins-ugly
-      displayName: INSTALL DEPENDENCIES (GStreamer)
+      displayName: INSTALL DEPENDENCIES (GStreamer) - LINUX
       condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
+
+    - task: CmdLine@2
+      displayName: INSTALL DEPENDENCIES (GStreamer) - WINDOWS
+      inputs:
+        script: |
+          echo Downloading gstreamer...
+          curl --location https://gstreamer.freedesktop.org/data/pkg/windows/1.19.3/msvc/gstreamer-1.0-msvc-x86_64-1.19.3.msi --output gstreamer.msi
+          echo Downloading gstreamer... Done!
+
+          echo Installing gstreamer...
+          msiexec /passive INSTALLLEVEL=1000 INSTALLDIR=$(System.DefaultWorkingDirectory)\gstreamer /i gstreamer.msi
+          echo Installing gstreamer... Done!
+          del gstreamer.msi
+
+          echo Updating the path
+          echo '##vso[task.setvariable variable=path]$(PATH);$(System.DefaultWorkingDirectory)\gstreamer\1.0\msvc_x86_64\bin;'
+
+      condition: eq('${{ parameters.vmImage }}', 'windows-latest')
 
     # -----------------------------------------------------------------------------
     # GET SPX - NO SPXBuild_Id - Install via `dotnet tool install`
