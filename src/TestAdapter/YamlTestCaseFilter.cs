@@ -32,6 +32,8 @@ namespace TestAdapterTest
                 }
             }
 
+            if (filterable.Contains("tag")) filterable.Add("tags");
+
             return filterable;
         }
 
@@ -56,7 +58,7 @@ namespace TestAdapterTest
                 case "simulate": return YamlTestProperties.Get(test, "simulate");
             }
 
-            var tags = test.Traits.Where(x => x.Name == name);
+            var tags = test.Traits.Where(x => x.Name == name || name == "tags");
             if (tags.Count() == 0) return null;
 
             return tags.Select(x => x.Value).ToArray();
