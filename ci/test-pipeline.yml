@@ -196,5 +196,5 @@ jobs:
       displayName: RUN TESTS - Test
       inputs:
         command: 'test'
-        arguments: '--no-build --no-restore --configuration ${{ parameters.buildConfiguration }} --filter "${{ testFilter }}"'
+        arguments: '--no-build --no-restore --configuration ${{ parameters.buildConfiguration }} --filter "${{ parameters.testFilter }}"'
         workingDirectory: $(System.DefaultWorkingDirectory)
