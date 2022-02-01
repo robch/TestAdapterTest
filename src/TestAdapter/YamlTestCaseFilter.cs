@@ -16,8 +16,23 @@ namespace TestAdapterTest
     {
         public static IEnumerable<TestCase> FilterTestCases(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            var filter = runContext.GetTestCaseFilter(supportedFilterProperties, null);
+            var names = GetSupportedFilterableNames(tests);
+            var filter = runContext.GetTestCaseFilter(names, null);
             return tests.Where(test => filter == null || filter.MatchTestCase(test, name => GetPropertyValue(test, name)));
+        }
+
+        private static HashSet<string> GetSupportedFilterableNames(IEnumerable<TestCase> tests)
+        {
+            var filterable = new HashSet<string>(supportedFilterProperties);
+            foreach (var test in tests)
+            {
+                foreach (var trait in test.Traits)
+                {
+                    filterable.Add(trait.Name);
+                }
+            }
+
+            return filterable;
         }
 
         private static object GetPropertyValue(TestCase test, string name)
@@ -30,19 +45,23 @@ namespace TestAdapterTest
                 case "fqn":
                 case "fullyqualifiedname": return test.FullyQualifiedName;
 
-                case "command": return YameTestProperties.Get(test, "command");
-                case "script": return YameTestProperties.Get(test, "script");
+                case "command": return YamlTestProperties.Get(test, "command");
+                case "script": return YamlTestProperties.Get(test, "script");
 
-                case "expect": return YameTestProperties.Get(test, "expect");
-                case "not-expect": return YameTestProperties.Get(test, "not-expect");
-                case "log-expect": return YameTestProperties.Get(test, "log-expect");
-                case "log-not-expect": return YameTestProperties.Get(test, "log-not-expect");
+                case "expect": return YamlTestProperties.Get(test, "expect");
+                case "not-expect": return YamlTestProperties.Get(test, "not-expect");
+                case "log-expect": return YamlTestProperties.Get(test, "log-expect");
+                case "log-not-expect": return YamlTestProperties.Get(test, "log-not-expect");
 
-                case "simulate": return YameTestProperties.Get(test, "simulate");
+                case "simulate": return YamlTestProperties.Get(test, "simulate");
             }
-            return null;
+
+            var tags = test.Traits.Where(x => x.Name == name);
+            if (tags.Count() == 0) return null;
+
+            return tags.Select(x => x.Value).ToArray();
         }
 
-        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName", "command", "script", "expect", "not-expect", "log-expect", "log-not-expect", "simulate" };
+        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName", "Category", "command", "script", "expect", "not-expect", "log-expect", "log-not-expect", "simulate" };
     }
 }

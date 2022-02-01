@@ -9,7 +9,7 @@ using YamlDotNet.RepresentationModel;
 
 namespace TestAdapterTest
 {
-    public class YameTestProperties
+    public class YamlTestProperties
     {
         public static void Set(TestCase test, string name, string value)
         {

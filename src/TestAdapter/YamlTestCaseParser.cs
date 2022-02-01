@@ -32,7 +32,9 @@ namespace TestAdapterTest
         private static IEnumerable<TestCase> TestCasesFromYamlSequence(string source, FileInfo file, YamlSequenceNode sequence, string area, string @class)
         {
             var tests = new List<TestCase>();
-            foreach (YamlMappingNode mapping in sequence?.Children)
+            if (sequence == null) return tests;
+
+            foreach (YamlMappingNode mapping in sequence.Children)
             {
                 var test = GetTestFromNode(source, file, mapping, area, @class);
                 if (test != null)
@@ -80,6 +82,8 @@ namespace TestAdapterTest
             SetTestCaseProperty(test, "log-expect", mapping, "log-expect");
             SetTestCaseProperty(test, "log-not-expect", mapping, "log-not-expect");
 
+            AddTestCaseTags(test, mapping);
+
             CheckInvalidTestCaseNodes(file, mapping, test);
             return test;
         }
@@ -101,7 +105,7 @@ namespace TestAdapterTest
         {
             foreach (YamlScalarNode key in mapping.Children.Keys)
             {
-                if (";area;class;name;command;script;expect;not-expect;log-expect;log-not-expect;simulate;".IndexOf($";{key.Value};") < 0)
+                if (";area;class;name;command;script;expect;not-expect;log-expect;log-not-expect;simulate;tag;tags;".IndexOf($";{key.Value};") < 0)
                 {
                     var error = $"**** Unexpected YAML node ('{key.Value}') in {file.FullName}({mapping[key].Start.Line})";
                     test.DisplayName = error;
@@ -120,7 +124,7 @@ namespace TestAdapterTest
         {
             if (value != null)
             {
-                YameTestProperties.Set(test, propertyName, value);
+                YamlTestProperties.Set(test, propertyName, value);
             }
         }
 
@@ -162,6 +166,97 @@ namespace TestAdapterTest
         private static string GetFullyQualifiedName(string area, string @class, string name)
         {
             return $"{area}.{@class}.{name}";
+        }
+
+        private static void AddTestCaseTags(TestCase test, YamlMappingNode mapping)
+        {
+            var tagNode = mapping.Children.ContainsKey("tag") ? mapping.Children["tag"] : null;
+            var tagsNode = mapping.Children.ContainsKey("tags") ? mapping.Children["tags"] : null;
+            if (tagNode == null && tagsNode == null) return;
+
+            var tags = new Dictionary<string, List<string>>();
+            UpdateTags(tags, tagNode, tagsNode);
+            SetTestCaseTagsAsTraits(test, tags);
+        }
+
+        private static void UpdateTags(Dictionary<string, List<string>> tags, YamlNode tagNode, YamlNode tagsNode)
+        {
+            var value = (tagNode as YamlScalarNode)?.Value;
+            AddOptionalTag(tags, "tag", value);
+
+            var values = (tagsNode as YamlScalarNode)?.Value;
+            AddOptionalCommaSeparatedTags(tags, values);
+
+            AddOptionalNameValueTags(tags, tagsNode as YamlMappingNode);
+            AddOptionalTagsForEachChild(tags, tagsNode as YamlSequenceNode);
+        }
+
+        private static void AddOptionalTag(Dictionary<string, List<string>> tags, string name, string value)
+        {
+            if (!string.IsNullOrEmpty(name) && !string.IsNullOrEmpty(value))
+            {
+                if (!tags.ContainsKey(name))
+                {
+                    tags.Add(name, new List<string>());
+                }
+                tags[name].Add(value);
+            }
+        }
+
+        private static void AddOptionalCommaSeparatedTags(Dictionary<string, List<string>> tags, string values)
+        {
+            if (values != null)
+            {
+                foreach (var tag in values.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    AddOptionalTag(tags, "tag", tag);
+                }
+            }
+        }
+
+        private static void AddOptionalNameValueTags(Dictionary<string, List<string>> tags, YamlMappingNode mapping)
+        {
+            var children = mapping?.Children;
+            if (children == null) return;
+
+            foreach (var child in children)
+            {
+                var key = (child.Key as YamlScalarNode)?.Value;
+                var value = (child.Value as YamlScalarNode)?.Value;
+                AddOptionalTag(tags, key, value);
+            }
+        }
+
+        private static void AddOptionalTagsForEachChild(Dictionary<string, List<string>> tags, YamlSequenceNode sequence)
+        {
+            var children = sequence?.Children;
+            if (children == null) return;
+
+            foreach (var child in children)
+            {
+                if (child is YamlScalarNode)
+                {
+                    AddOptionalTag(tags, "tag", (child as YamlScalarNode).Value);
+                    continue;
+                }
+
+                if (child is YamlMappingNode)
+                {
+                    AddOptionalNameValueTags(tags, child as YamlMappingNode);
+                    continue;
+                }
+            }
+        }
+
+        private static void SetTestCaseTagsAsTraits(TestCase test, Dictionary<string, List<string>> tags)
+        {
+            foreach (var tag in tags)
+            {
+                foreach (var value in tag.Value)
+                {
+                    test.Traits.Add(tag.Key, value);
+                }
+            }
         }
 
         private const string defaultClassName = "TestCases";
