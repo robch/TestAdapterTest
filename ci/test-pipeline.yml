@@ -17,11 +17,14 @@ parameters:
   - 'Release'
 - name: 'SPXBuild_id'
   type: number
-  default: 26815062
+  default: 26843578
   values:
   - 0
-  - 26811836
-  - 26815062
+  - 26843578
+- name: testFilter
+  displayName: Test Filter
+  type: string
+  default: "tag!=skip"
 
 jobs:
 - job: SPX_Yaml_Test_Pipeline
@@ -193,5 +196,5 @@ jobs:
       displayName: RUN TESTS - Test
       inputs:
         command: 'test'
-        arguments: '--no-build --no-restore --configuration ${{ parameters.buildConfiguration }}'
+        arguments: '--no-build --no-restore --configuration ${{ parameters.buildConfiguration }} --filter "${{ testFilter }}"'
         workingDirectory: $(System.DefaultWorkingDirectory)
