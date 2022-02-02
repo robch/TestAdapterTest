@@ -4,7 +4,7 @@ trigger:
 parameters:
 - name: vmImage
   type: string
-  default: windows-latest
+  default: ubuntu-latest
   values:
   - windows-latest
   - ubuntu-latest
