@@ -17,11 +17,11 @@ parameters:
   - 'Release'
 - name: 'SPXBuild_id'
   type: number
-  default: 26875385
+  default: 26875389
   values:
   - 0
   - 26843578
-  - 26875385
+  - 26875389
 - name: testFilter
   displayName: Test Filter
   type: string
