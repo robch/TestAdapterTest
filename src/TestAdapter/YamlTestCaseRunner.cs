@@ -176,7 +176,7 @@ namespace TestAdapterTest
             sb.AppendLine($"not-expect='{notExpect?.Replace("\n", "\\n")}'");
             sb.AppendLine($"log-expect='{logExpect?.Replace("\n", "\\n")}'");
             sb.AppendLine($"log-not-expect='{logNotExpect?.Replace("\n", "\\n")}'");
-            sb.AppendLine($"run-directory='{workingDirectory?.Replace("\n", "\\n")}'");
+            sb.AppendLine($"working-directory='{workingDirectory?.Replace("\n", "\\n")}'");
 
             stdOut = sb.ToString();
             stdErr = "STDERR";

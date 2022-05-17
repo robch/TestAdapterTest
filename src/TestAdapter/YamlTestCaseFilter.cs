@@ -56,6 +56,8 @@ namespace TestAdapterTest
                 case "log-not-expect": return YamlTestProperties.Get(test, "log-not-expect");
 
                 case "simulate": return YamlTestProperties.Get(test, "simulate");
+
+                case "workingDirectory": return YamlTestProperties.Get(test, "working-directory");
             }
 
             var tags = test.Traits.Where(x => x.Name == name || name == "tags");
