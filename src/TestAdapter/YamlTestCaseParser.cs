@@ -76,11 +76,12 @@ namespace TestAdapterTest
             SetTestCaseProperty(test, "command", command);
             SetTestCaseProperty(test, "script", script);
             SetTestCaseProperty(test, "simulate", simulate);
+            SetTestCaseProperty(test, "run-directory", file.DirectoryName);
 
             SetTestCaseProperty(test, "expect", mapping, "expect");
             SetTestCaseProperty(test, "not-expect", mapping, "not-expect");
             SetTestCaseProperty(test, "log-expect", mapping, "log-expect");
-            SetTestCaseProperty(test, "log-not-expect", mapping, "log-not-expect");
+            SetTestCaseProperty(test, "log-not-expect", mapping, "log-not-expect");            
 
             AddTestCaseTags(test, mapping);
 
