@@ -47,15 +47,15 @@ namespace TestAdapterTest
             var notExpect = YamlTestProperties.Get(test, "not-expect");
             var logExpect = YamlTestProperties.Get(test, "log-expect");
             var logNotExpect = YamlTestProperties.Get(test, "log-not-expect");
-            var runDirectory = YamlTestProperties.Get(test, "run-directory");
+            var workingDirectory = YamlTestProperties.Get(test, "working-directory");
 
             var simulate = YamlTestProperties.Get(test, "simulate");
             return string.IsNullOrEmpty(simulate)
-                ? RunTestCase(test, command, script, expect, notExpect, logExpect, logNotExpect, runDirectory, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace, out outcome)
-                : SimulateTestCase(test, simulate, command, script, expect, notExpect, logExpect, logNotExpect, runDirectory, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace, out outcome);
+                ? RunTestCase(test, command, script, expect, notExpect, logExpect, logNotExpect, workingDirectory, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace, out outcome)
+                : SimulateTestCase(test, simulate, command, script, expect, notExpect, logExpect, logNotExpect, workingDirectory, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace, out outcome);
         }
 
-        private static TestOutcome RunTestCase(TestCase test, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, string runDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace, out TestOutcome outcome)
+        private static TestOutcome RunTestCase(TestCase test, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace, out TestOutcome outcome)
         {
             additional = $"START TIME: {DateTime.UtcNow}";
             debugTrace = "";
@@ -83,7 +83,7 @@ namespace TestAdapterTest
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
-                    WorkingDirectory = runDirectory
+                    WorkingDirectory = workingDirectory
                 };
 
                 var process = Process.Start(startInfo);
@@ -167,7 +167,7 @@ namespace TestAdapterTest
             return atArgs.TrimStart();
         }
 
-        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, string runDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace, out TestOutcome outcome)
+        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string command, string script, string expect, string notExpect, string logExpect, string logNotExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace, out TestOutcome outcome)
         {
             var sb = new StringBuilder();
             sb.AppendLine($"command='{command?.Replace("\n", "\\n")}'");
@@ -176,7 +176,7 @@ namespace TestAdapterTest
             sb.AppendLine($"not-expect='{notExpect?.Replace("\n", "\\n")}'");
             sb.AppendLine($"log-expect='{logExpect?.Replace("\n", "\\n")}'");
             sb.AppendLine($"log-not-expect='{logNotExpect?.Replace("\n", "\\n")}'");
-            sb.AppendLine($"run-directory='{runDirectory?.Replace("\n", "\\n")}'");
+            sb.AppendLine($"run-directory='{workingDirectory?.Replace("\n", "\\n")}'");
 
             stdOut = sb.ToString();
             stdErr = "STDERR";
