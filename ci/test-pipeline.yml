@@ -122,8 +122,8 @@ jobs:
         find spx*
         find ~/.dotnet/tools/spx*
         echo ---
-        echo cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0
-        cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0
+        echo cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0/tests
+        cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0/tests
         echo ls
         ls
         echo ---
@@ -158,8 +158,8 @@ jobs:
           dir /s/b
           dir spx* /s/b
           echo ---
-          echo cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\net6.0
-          cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\net6.0
+          echo cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\net6.0\tests
+          cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\net6.0\tests
           echo dir *
           dir *
           echo ---
