@@ -57,7 +57,7 @@ namespace TestAdapterTest
 
                 case "simulate": return YamlTestProperties.Get(test, "simulate");
 
-                case "workingDirectory": return YamlTestProperties.Get(test, "working-directory");
+                case "working-directory": return YamlTestProperties.Get(test, "working-directory");
             }
 
             var tags = test.Traits.Where(x => x.Name == name || name == "tags");
