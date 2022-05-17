@@ -76,7 +76,9 @@ namespace TestAdapterTest
             SetTestCaseProperty(test, "command", command);
             SetTestCaseProperty(test, "script", script);
             SetTestCaseProperty(test, "simulate", simulate);
-            SetTestCaseProperty(test, "working-directory", file.DirectoryName);
+
+            string workingDirectory = GetScalarString(mapping, "workingDirectory") ?? file.DirectoryName;
+            SetTestCaseProperty(test, "working-directory", workingDirectory);
 
             SetTestCaseProperty(test, "expect", mapping, "expect");
             SetTestCaseProperty(test, "not-expect", mapping, "not-expect");
