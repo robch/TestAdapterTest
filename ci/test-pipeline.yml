@@ -98,11 +98,11 @@ jobs:
           archiveFilePatterns: '**/spx-netcore31-win-x64.zip'
         ${{ else }}:
           archiveFilePatterns: '**/spx-netcore31-linux-x64.zip'
-        destinationFolder: $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx
+        destinationFolder: $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0/spx
         cleanDestinationFolder: false
       condition: gt( ${{ parameters.SPXBuild_id }} , 0) # only if we have a build_id
 
-    - script: 'chmod u+x $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx/spx'
+    - script: 'chmod u+x $(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0/spx/spx'
       displayName: GET SPX - Have SPXBuild_id - CHMOD
       condition: and(gt( ${{ parameters.SPXBuild_id }} , 0), not(eq('${{ parameters.vmImage }}', 'windows-latest')))
 
@@ -110,7 +110,7 @@ jobs:
     # FIND and CONFIGURE SPX (LINUX)
     # -----------------------------------------------------------------------------
     - script: |
-        echo '##vso[task.setvariable variable=path]$(PATH):$(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1/spx:~/.dotnet/tools:'
+        echo '##vso[task.setvariable variable=path]$(PATH):$(System.DefaultWorkingDirectory)/src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0/spx:~/.dotnet/tools:'
       displayName: UPDATE PATH - Linux
       condition: not(eq('${{ parameters.vmImage }}', 'windows-latest'))
 
@@ -122,8 +122,8 @@ jobs:
         find spx*
         find ~/.dotnet/tools/spx*
         echo ---
-        echo cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
-        cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/netcoreapp3.1
+        echo cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0/tests
+        cd src/TestRunner/bin/${{ parameters.buildConfiguration }}/net6.0/tests
         echo ls
         ls
         echo ---
@@ -145,7 +145,7 @@ jobs:
       displayName: UPDATE PATH - Windows
       inputs:
         script: |
-          echo '##vso[task.setvariable variable=path]$(PATH);$(System.DefaultWorkingDirectory)\src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1\spx;'
+          echo '##vso[task.setvariable variable=path]$(PATH);$(System.DefaultWorkingDirectory)\src\TestRunner\bin\${{ parameters.buildConfiguration }}\net6.0\spx;'
       condition: eq('${{ parameters.vmImage }}', 'windows-latest')
 
     - task: CmdLine@2
@@ -158,8 +158,8 @@ jobs:
           dir /s/b
           dir spx* /s/b
           echo ---
-          echo cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1
-          cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\netcoreapp3.1
+          echo cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\net6.0\tests
+          cd src\TestRunner\bin\${{ parameters.buildConfiguration }}\net6.0\tests
           echo dir *
           dir *
           echo ---

@@ -41,7 +41,8 @@ namespace TestAdapterTest
             { "not-expect", RegisterTestCaseProperty("NotExpect") },
             { "log-expect", RegisterTestCaseProperty("LogExpect") },
             { "log-not-expect", RegisterTestCaseProperty("LogNotExpect") },
-            { "simulate", RegisterTestCaseProperty("Simulate") }
+            { "simulate", RegisterTestCaseProperty("Simulate") },
+            { "working-directory", RegisterTestCaseProperty("WorkingDirectory") }
         };
 
         #endregion
