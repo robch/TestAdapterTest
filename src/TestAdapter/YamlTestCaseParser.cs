@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
+using YamlDotNet.Helpers;
 using YamlDotNet.RepresentationModel;
 
 namespace TestAdapterTest
@@ -13,11 +14,9 @@ namespace TestAdapterTest
     {
         public static IEnumerable<TestCase> TestCasesFromYaml(string source, FileInfo file)
         {
+            var area = GetRootArea(file);
             var parsed = ParseYamlStream(file.FullName);
-            var sequence = parsed?.Documents?[0].RootNode as YamlSequenceNode;
-
-            var rootArea = GetRootArea(file);
-            return TestCasesFromYamlSequence(source, file, sequence, rootArea, defaultClassName);
+            return TestCasesFromYamlStream(source, file, area, parsed);
         }
 
         #region private methods
@@ -29,6 +28,41 @@ namespace TestAdapterTest
             return stream;
         }
 
+        private static IEnumerable<TestCase> TestCasesFromYamlStream(string source, FileInfo file, string area, YamlStream parsed)
+        {
+            var tests = new List<TestCase>();
+            foreach (var document in parsed?.Documents)
+            {
+                var fromDocument = TestCasesFromYamlNode(source, file, document.RootNode, area, defaultClassName);
+                tests.AddRange(fromDocument);
+            }
+            return tests;
+        }
+
+        private static IEnumerable<TestCase> TestCasesFromYamlNode(string source, FileInfo file, YamlNode node, string area, string @class)
+        {
+            return node is YamlMappingNode
+                ? TestCasesFromYamlMapping(source, file, node as YamlMappingNode, area, @class)
+                : TestCasesFromYamlSequence(source, file, node as YamlSequenceNode, area, @class);
+        }
+
+        private static IEnumerable<TestCase> TestCasesFromYamlMapping(string source, FileInfo file, YamlMappingNode mapping, string area, string @class)
+        {
+            var children = CheckForChildren(source, file, mapping, area, @class);
+            if (children != null)
+            {
+                return children;
+            }
+
+            var test = GetTestFromNode(source, file, mapping, area, @class);
+            if (test != null)
+            {
+                return new[]{ test };
+            }
+
+            return null;
+        }
+
         private static IEnumerable<TestCase> TestCasesFromYamlSequence(string source, FileInfo file, YamlSequenceNode sequence, string area, string @class)
         {
             var tests = new List<TestCase>();
@@ -36,20 +70,13 @@ namespace TestAdapterTest
 
             foreach (YamlMappingNode mapping in sequence.Children)
             {
-                var test = GetTestFromNode(source, file, mapping, area, @class);
-                if (test != null)
+                var fromMapping = TestCasesFromYamlMapping(source, file, mapping, area, @class);
+                if (fromMapping != null)
                 {
-                    tests.Add(test);
-                    continue;
-                }
-
-                var children = CheckForChildren(source, file, mapping, area, @class);
-                if (children != null)
-                {
-                    tests.AddRange(children);
-                    continue;
+                    tests.AddRange(fromMapping);
                 }
             }
+
             return tests;
         }
 
@@ -60,11 +87,14 @@ namespace TestAdapterTest
 
             string command = GetScalarString(mapping, "command");
             string script = GetScalarString(mapping, "script");
-            var bothOrNeither = (command == null) == (script == null);
-            if (bothOrNeither && !simulating) return null;
 
-            string fullyQualifiedName = GetFullyQualifiedName(mapping, area, @class)
-                ?? GetFullyQualifiedName(area, @class, $"Expected YAML node ('name') at {file.FullName}({mapping.Start.Line})");
+            string fullyQualifiedName = command == null && script == null
+                ? GetFullyQualifiedNameAndCommandFromShortForm(mapping, area, @class, ref command)
+                : GetFullyQualifiedName(mapping, area, @class);
+            fullyQualifiedName ??= GetFullyQualifiedName(area, @class, $"Expected YAML node ('name') at {file.FullName}({mapping.Start.Line})");
+
+            var neitherOrBoth = (command == null) == (script == null);
+            if (neitherOrBoth && !simulating) return null;
 
             Logger.Log($"YamlTestParser::GetTests(): new TestCase('{fullyQualifiedName}')");
             var test = new TestCase(fullyQualifiedName, new Uri(YamlTestAdapter.Executor), source)
@@ -79,6 +109,9 @@ namespace TestAdapterTest
 
             string workingDirectory = GetScalarString(mapping, "workingDirectory") ?? file.DirectoryName;
             SetTestCaseProperty(test, "working-directory", workingDirectory);
+
+            SetTestCasePropertyMap(test, "foreach", mapping, "foreach");
+            SetTestCasePropertyMap(test, "arguments", mapping, "arguments");
 
             SetTestCaseProperty(test, "expect", mapping, "expect");
             SetTestCaseProperty(test, "not-expect", mapping, "not-expect");
@@ -108,13 +141,18 @@ namespace TestAdapterTest
         {
             foreach (YamlScalarNode key in mapping.Children.Keys)
             {
-                if (";area;class;name;command;script;expect;not-expect;log-expect;log-not-expect;simulate;tag;tags;".IndexOf($";{key.Value};") < 0)
+                if (!IsValidTestCaseNode(key.Value) && !test.DisplayName.EndsWith(key.Value))
                 {
-                    var error = $"**** Unexpected YAML node ('{key.Value}') in {file.FullName}({mapping[key].Start.Line})";
+                    var error = $"**** Unexpected YAML node ('{key.Value}', '{test.DisplayName}') in {file.FullName}({mapping[key].Start.Line})";
                     test.DisplayName = error;
                     Logger.Log(error);
                 }
             }
+        }
+
+        private static bool IsValidTestCaseNode(string value)
+        {
+            return ";area;class;name;command;script;foreach;arguments;expect;not-expect;log-expect;log-not-expect;simulate;tag;tags;".IndexOf($";{value};") >= 0;
         }
 
         private static void SetTestCaseProperty(TestCase test, string propertyName, YamlMappingNode mapping, string mappingName)
@@ -131,6 +169,109 @@ namespace TestAdapterTest
             }
         }
 
+        private static void SetTestCasePropertyMap(TestCase test, string propertyName, YamlMappingNode testNode, string mappingName)
+        {
+            var ok = testNode.Children.ContainsKey(mappingName);
+            if (!ok) return;
+
+            var argumentsNode = testNode.Children[mappingName];
+            if (argumentsNode == null) return;
+
+            if (argumentsNode is YamlScalarNode)
+            {
+                var value = (argumentsNode as YamlScalarNode).Value;
+                SetTestCaseProperty(test, propertyName, $"\"{value}\"");
+            }
+            else if (argumentsNode is YamlMappingNode)
+            {
+                var asMapping = argumentsNode as YamlMappingNode;
+                SetTestCasePropertyMap(test, propertyName, asMapping
+                    .Select(x => NormalizeToScalarKeyValuePair(test, x)));
+            }
+            else if (argumentsNode is YamlSequenceNode)
+            {
+                var asSequence = argumentsNode as YamlSequenceNode;
+
+                SetTestCasePropertyMap(test, propertyName, asSequence
+                    .Select(mapping => (mapping as YamlMappingNode)?
+                        .Select(x => NormalizeToScalarKeyValuePair(test, x))));
+            }
+        }
+
+        private static void SetTestCasePropertyMap(TestCase test, string propertyName, IEnumerable<IEnumerable<KeyValuePair<YamlNode, YamlNode>>> kvss)
+        {
+            // flatten the kvs
+            var kvs = kvss.SelectMany(x => x);
+
+            // ensure all keys are unique, if not, transform appropriately
+            var keys = kvs.GroupBy(kv => (kv.Key as YamlScalarNode)?.Value).Select(g => g.Key).ToArray();
+            if (keys.Length < kvs.Count())
+            {
+                Logger.Log($"keys.Length={keys.Length}, kvs.Count={kvs.Count()}");
+                Logger.Log($"keys='{string.Join(",", keys)}'");
+
+                var values = new List<string>();
+                foreach (var items in kvss)
+                {
+                    var map = new YamlMappingNode(items);
+                    values.Add(map.ConvertScalarMapToTsvString(keys));
+                }
+
+                var combinedKey = new YamlScalarNode(string.Join("\t", keys));
+                var combinedValue = new YamlScalarNode(string.Join("\n", values));
+                var combinedKv = new KeyValuePair<YamlNode, YamlNode>(combinedKey, combinedValue);
+                kvs = new List<KeyValuePair<YamlNode, YamlNode>>(new[]{ combinedKv });
+            }
+
+            SetTestCasePropertyMap(test, propertyName, kvs);
+        }
+
+        private static void SetTestCasePropertyMap(TestCase test, string propertyName, IEnumerable<KeyValuePair<YamlNode, YamlNode>> kvs)
+        {
+            var newMap = new YamlMappingNode(kvs);
+            SetTestCaseProperty(test, propertyName, newMap.ToJsonString());
+        }
+
+        private static KeyValuePair<YamlNode, YamlNode> NormalizeToScalarKeyValuePair(TestCase test, KeyValuePair<YamlNode, YamlNode> item)
+        {
+            var key = item.Key;
+            var keyOk = key is YamlScalarNode;
+            var value = item.Value;
+            var valueOk = value is YamlScalarNode;
+            if (keyOk && valueOk) return item;
+
+            string[] keys = null;
+            if (!keyOk)
+            {
+                var text = key.ConvertScalarSequenceToTsvString();
+                if (text == null)
+                {
+                    text = $"Invalid key at {test.CodeFilePath}({key.Start.Line},{key.Start.Column})";
+                    Logger.Log(text);
+                }
+                else if (text.Contains('\t'))
+                {
+                    keys = text.Split('\t');
+                }
+                key = new YamlScalarNode(text);
+            }
+
+            if (!valueOk)
+            {
+                var text = value.ConvertScalarSequenceToMultilineTsvString(keys);
+                if (text == null)
+                {
+                    text = $"Invalid sequence or sequence value at {test.CodeFilePath}({value.Start.Line},{value.Start.Column})";
+                    Logger.Log(text);
+                }
+
+                value = new YamlScalarNode(text);
+            }
+
+            Logger.Log($"YamlTestCaseParser.NormalizeToScalarKeyValuePair: key='{(key as YamlScalarNode).Value}', value='{(value as YamlScalarNode).Value}'");
+            return new KeyValuePair<YamlNode, YamlNode>(key, value);
+        }
+
         private static string GetScalarString(YamlMappingNode mapping, string mappingName, string defaultValue = null)
         {
             var ok = mapping.Children.ContainsKey(mappingName);
@@ -138,6 +279,17 @@ namespace TestAdapterTest
 
             var node = mapping.Children[mappingName] as YamlScalarNode;
             var value = node?.Value;
+
+            return value ?? defaultValue;
+        }
+
+        private static string GetYamlNodeAsString(YamlMappingNode mapping, string nodeName, string defaultValue = null)
+        {
+            var ok = mapping.Children.ContainsKey(nodeName);
+            if (!ok) return defaultValue;
+
+            var node = mapping.Children[nodeName];
+            var value = node?.ToYamlString();
 
             return value ?? defaultValue;
         }
@@ -164,6 +316,25 @@ namespace TestAdapterTest
             @class = GetScalarString(mapping, "class", @class);
 
             return GetFullyQualifiedName(area, @class, name);
+        }
+
+        private static string GetFullyQualifiedNameAndCommandFromShortForm(YamlMappingNode mapping, string area, string @class, ref string command)
+        {
+            // if there's only one invalid mapping node, we'll treat it's key as "name" and value as "command"
+            var invalid = mapping.Children.Keys.Where(key => !IsValidTestCaseNode((key as YamlScalarNode).Value));
+            if (invalid.Count() == 1 && command == null)
+            {
+                var name = (invalid.FirstOrDefault() as YamlScalarNode).Value;
+                if (name == null) return null;
+
+                command = GetScalarString(mapping, name);
+                area = UpdateArea(mapping, area);
+                @class = GetScalarString(mapping, "class", @class);
+
+                return GetFullyQualifiedName(area, @class, name);
+            }
+
+            return null;
         }
 
         private static string GetFullyQualifiedName(string area, string @class, string name)
@@ -210,7 +381,7 @@ namespace TestAdapterTest
         {
             if (values != null)
             {
-                foreach (var tag in values.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                foreach (var tag in values.Split(",".ToArray(), StringSplitOptions.RemoveEmptyEntries))
                 {
                     AddOptionalTag(tags, "tag", tag);
                 }

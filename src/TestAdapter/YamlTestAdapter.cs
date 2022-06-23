@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 using System;
@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,12 +30,12 @@ namespace TestAdapterTest
         {
            Logger.Log($"TestAdapter::GetTestsFromFile('{source}')");
 
-            var file = new FileInfo(source);
+           var file = new FileInfo(source);
            Logger.Log($"TestAdapter::GetTestsFromFile('{source}'): Extension={file.Extension}");
 
             return file.Extension.Trim('.') == FileExtensionYaml.Trim('.')
                 ? GetTestsFromYaml(source, file)
-                : GetTestsFromDirectory(source, file.Directory);
+                : GetTestsFromSource(source, file);
         }
 
         public static void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
@@ -46,6 +47,25 @@ namespace TestAdapterTest
         }
 
         #region private methods
+
+        private static IEnumerable<TestCase> GetTestsFromSource(string source, FileInfo file)
+        {
+            var sourceOk =
+                source.Contains("Azure.AI.CLI.TestAdapter") ||
+                Assembly.LoadFile(source).GetReferencedAssemblies().Count(x => x.Name.Contains("Azure.AI.CLI.TestAdapter")) > 0;
+
+            // foreach (var a in Assembly.LoadFile(source).GetReferencedAssemblies())
+            // {
+            //     Logger.Log($"a.Name={a.Name}");
+            //     Logger.Log($"a.FullName={a.FullName}");
+            // }
+
+            Logger.Log($"GetTestsFromSource('{source}'): sourceOk = {sourceOk}");
+
+            return !sourceOk
+                ? Enumerable.Empty<TestCase>()
+                : GetTestsFromDirectory(source, file.Directory);
+        }
 
         private static IEnumerable<TestCase> GetTestsFromDirectory(string source, DirectoryInfo directory)
         {

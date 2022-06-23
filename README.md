@@ -1,25 +1,53 @@
-# Spx Yaml Test Adapter + Test Runner
+# `spx` CLI Yaml Test Adapter + Test Runner
 
 PRE-REQUISITES:
 * `spx` must be accessible in `PATH`
 * `spx` must be configured as required for tests (e.g. `region` and `key`, or `endpoint` setup)
 - see: https://crbn.us/searchdocs?spx
 - OR ...
-  - `dotnet tool install --global Microsoft.CognitiveServices.Speech.CLI`
-  - `spx config @region --set YOUR-REGION-HERE`
-  - `spx config @key --set YOUR-KEY-HERE`
+  ```dotnetcli
+  dotnet tool install --global Microsoft.CognitiveServices.Speech.CLI
+  spx config @region --set YOUR-REGION-HERE
+  spx config @key --set YOUR-KEY-HERE`
+  ```
 
 ## Run ALL tests
 
 **dotnet test**  
 From fresh clone (one step, CLI):
-* DEBUG: `dotnet test --logger:trx`
-* RELEASE: `dotnet test --configuration release --logger:trx`
+* DEBUG:
+  ```dotnetcli
+  dotnet test --logger:trx
+  ```
+* RELEASE:
+  ```dotnetcli
+  dotnet test --configuration release --logger:trx
+  ```
+
+OR ... [Build](#BUILD) first, then w/CLI:
+* DEBUG:
+  ```dotnetcli
+  cd src\TestRunner\bin\Debug\net6.0
+  dotnet test Azure.AI.CLI.TestRunner.dll --logger:trx
+  ```
+* RELEASE:
+  ```dotnetcli
+  cd src\TestRunner\bin\Release\net6.0
+  dotnet test Azure.AI.CLI.TestRunner.dll --logger:trx --logger:console;verbosity=normal
+  ```
 
 **dotnet vstest**  
 OR ... [Build](#BUILD) first, then w/CLI:
-* DEBUG: `cd src\TestRunner\bin\Debug\netcoreapp3.1` && `dotnet vstest YamlTestRunner.dll --logger:trx`
-* RELEASE: `cd src\TestRunner\bin\Release\netcoreapp3.1` && `dotnet vstest YamlTestRunner.dll --logger:trx --logger:console;verbosity=normal`
+* DEBUG:
+  ```dotnetcli
+  cd src\TestRunner\bin\Debug\net6.0
+  dotnet vstest Azure.AI.CLI.TestRunner.dll --logger:trx
+  ```
+* RELEASE:
+  ```dotnetcli
+  cd src\TestRunner\bin\Release\net6.0
+  dotnet vstest Azure.AI.CLI.TestRunner.dll --logger:trx --logger:console;verbosity=normal
+  ```
 
 **VS 2019+**  
 OR ... [Build](#BUILD) first, then w/Visual Studio 2019+:
@@ -31,26 +59,79 @@ OR ... [Build](#BUILD) first, then w/Visual Studio 2019+:
 
 **dotnet test**  
 From fresh clone (one step, CLI):
-* DEBUG: `dotnet test -t`
-* RELEASE: `dotnet test --configuration release -t`
+* DEBUG:
+  ```dotnetcli
+  dotnet test -t
+  ```
+* RELEASE:
+  ```dotnetcli
+  dotnet test --configuration release -t
+  ```
+
+OR ... [Build](#BUILD) first, then w/CLI:
+* DEBUG:
+  ```dotnetcli
+  cd src\TestRunner\bin\Debug\net6.0
+  dotnet test Azure.AI.CLI.TestRunner.dll -t
+  ```
+* RELEASE:
+  ```dotnetcli
+  cd src\TestRunner\bin\Release\net6.0
+  dotnet test Azure.AI.CLI.TestRunner.dll -t
+  ```
 
 **dotnet vstest**  
 OR ... [Build](#BUILD) first, then w/CLI:
-* DEBUG: `cd src\TestRunner\bin\Debug\netcoreapp3.1` && `dotnet vstest YamlTestRunner.dll -lt`
-* RELEASE: `cd src\TestRunner\bin\Release\netcoreapp3.1` && `dotnet vstest YamlTestRunner.dll -lt`
+* DEBUG:
+  ```dotnetcli
+  cd src\TestRunner\bin\Debug\net6.0
+  dotnet vstest Azure.AI.CLI.TestRunner.dll -lt
+  ```
+* RELEASE:
+  ```dotnetcli
+  cd src\TestRunner\bin\Release\net6.0
+  dotnet vstest Azure.AI.CLI.TestRunner.dll -lt
+  ```
 
 ---
 ## Run SOME tests
 
 **dotnet test**  
 From fresh clone (one step, CLI):
-* DEBUG: `dotnet test --filter:name~PARTIAL_NAME`
-* RELEASE: `dotnet test --configuration release --filter:name~PARTIAL_NAME`
+* DEBUG:
+  ```dotnetcli
+  dotnet test --filter:name~PARTIAL_NAME
+  ```
+* RELEASE:
+  ```dotnetcli
+  dotnet test --configuration release --filter:name~PARTIAL_NAME
+  ```
+
+OR ... [Build](#BUILD) first, then w/CLI:
+
+* DEBUG:
+  ```dotnetcli
+  cd src\TestRunner\bin\Debug\net6.0
+  dotnet test --filter:name~PARTIAL_NAME Azure.AI.CLI.TestRunner.dll
+  ```
+* RELEASE:
+  ```dotnetcli
+  cd src\TestRunner\bin\Release\net6.0
+  dotnet test --filter:name~PARTIAL_NAME Azure.AI.CLI.TestRunner.dll
+  ```
 
 **dotnet vstest**  
 OR ... [Build](#BUILD) first, then w/CLI:
-* DEBUG: `cd src\TestRunner\bin\Debug\netcoreapp3.1` && `dotnet vstest YamlTestRunner.dll --logger:trx --testcasefilter:name~PARTIAL_NAME`
-* RELEASE: `cd src\TestRunner\bin\Release\netcoreapp3.1` && `dotnet vstest YamlTestRunner.dll --logger:trx --testcasefilter:name~PARTIAL_NAME`
+* DEBUG:
+  ```dotnetcli
+  cd src\TestRunner\bin\Debug\net6.0
+  dotnet vstest Azure.AI.CLI.TestRunner.dll --logger:trx --testcasefilter:name~PARTIAL_NAME
+  ```
+* RELEASE:
+  ```dotnetcli
+  cd src\TestRunner\bin\Release\net6.0
+  dotnet vstest Azure.AI.CLI.TestRunner.dll --logger:trx --testcasefilter:name~PARTIAL_NAME
+  ```
 
 **VS 2019+**  
 OR ... [Build](#BUILD) first, then w/Visual Studio 2019+:
@@ -91,7 +172,7 @@ Parenthesis () can be used to group sub-expressions.
 | log-not-expect | | `log-not-expect~ERROR`
 
 ---
-## BUILD
+# BUILD
 
 **dotnet build**
 * DEBUG: `dotnet build`
@@ -123,4 +204,4 @@ Console logging: `--logger:console`, optionally followed by one of:
 * `;verbosity=normal`
 * `;verbosity=detailed`
 
-e.g. `dotnet vstest YamlTestRunner.dll --logger:trx --logger:console;verbosity=normal`
+e.g. `dotnet vstest Azure.AI.CLI.TestRunner.dll --logger:trx --logger:console;verbosity=normal`
