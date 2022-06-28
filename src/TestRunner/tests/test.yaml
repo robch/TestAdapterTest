@@ -4,6 +4,9 @@
 - name: simulate skipped
   simulate: Skipped
 
+- test1: run --script "echo hello"
+- test2: run --script "echo oh yeah?"
+
 - name: try1a command ... spx
   command: spx
 
@@ -46,6 +49,7 @@
     (?# ---------- COMMANDS)
     ^COMMANDS\r?$\n
     ^\r?$\n
+    ^  spx init \[\.\.\.\]            \(see: spx help init\)\r?$\n
     ^  spx config \[\.\.\.\]          \(see: spx help config\)\r?$\n
     ^\r?$\n
     ^  spx recognize \[\.\.\.\]       \(see: spx help recognize\)\r?$\n
@@ -68,9 +72,11 @@
     ^\r?$\n
     ^  spx help examples\r?$\n
     ^\r?$\n
-    ^  spx help find --topics "examples"\r?$\n
-    ^  spx help find --text "example"\r?$\n
-    ^  spx help find \*\r?$\n
+    ^  spx help find "mp3"\r?$\n
+    ^  spx help find "mp3" --expand\r?$\n
+    ^\r?$\n
+    ^  spx help find topics "examples"\r?$\n
+    ^  spx help list topics\r?$\n
     ^\r?$\n
     ^  spx help documentation\r?$\n
     ^\r?$\n

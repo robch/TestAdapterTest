@@ -1,38 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+  <Import Project="YamlTestRunnerCommon.targets" />
 
   <ItemGroup>
-    <None Remove="tests\test.yaml" />
-    <None Remove="tests\test2.yaml" />
-    <None Remove="tests\test3.yaml" />
+    <Compile Include="*.cs"/>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="tests\test.yaml">
+    <Content Include="$(LocalTestsPath)\*.yaml">
+      <Link>tests\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="tests\test2.yaml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="tests\test3.yaml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="2.1.0" />
-    <PackageReference Include="coverlet.collector" Version="1.2.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\TestAdapter\YamlTestAdapter.csproj" />
   </ItemGroup>
 
 </Project>
