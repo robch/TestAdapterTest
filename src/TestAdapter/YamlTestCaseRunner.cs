@@ -65,7 +65,7 @@ namespace TestAdapterTest
             var workingDirectory = YamlTestProperties.Get(test, "working-directory");
             var simulate = YamlTestProperties.Get(test, "simulate");
 
-            foreach (var foreachItem in ExpandForEachGroups(@foreach))
+            foreach (var foreachItem in ExpandForEachGroups(@foreach, workingDirectory))
             {
                 var start = DateTime.Now;
 
@@ -81,18 +81,19 @@ namespace TestAdapterTest
                 var result = CreateTestResult(test, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
                 if (!string.IsNullOrEmpty(foreachItem) && foreachItem != "{}")
                 {
-                    result.DisplayName = $"{test.DisplayName}: {foreachItem}";
+                    // var parsed = JObject.Parse(foreachItem);
+                    result.DisplayName = $"{test.DisplayName}: {foreachItem.Substring(0, 80)} ....\"";
                 }
                 yield return result;
             }
         }
 
-        private static IEnumerable<string> ExpandForEachGroups(string @foreach)
+        private static IEnumerable<string> ExpandForEachGroups(string @foreach, string workingDirectory)
         {
-            var kvs = KeyValuePairsFromJson(@foreach, false)
+            var kvs = KeyValuePairsFromJson(@foreach, workingDirectory, false)
                 .Select(kv => new KeyValuePair<string, IEnumerable<string>>(
                     kv.Key,
-                    kv.Value.Split('\n')));
+                    kv.Value.Split('\n', StringSplitOptions.RemoveEmptyEntries)));
 
             var dicts = new[] { new Dictionary<string, string>() }.ToList();
             foreach (var item in kvs)
@@ -140,8 +141,8 @@ namespace TestAdapterTest
                 logExpect = WriteTextToTempFile(logExpect);
                 logNotExpect = WriteTextToTempFile(logNotExpect);
 
-                var kvs = KeyValuePairsFromJson(arguments, true);
-                kvs.AddRange(KeyValuePairsFromJson(@foreach, false));
+                var kvs = KeyValuePairsFromJson(arguments, workingDirectory, true);
+                kvs.AddRange(KeyValuePairsFromJson(@foreach, workingDirectory, false));
                 kvs = ConvertValuesToAtArgs(kvs, ref filesToDelete);
 
                 var startArgs = GetStartInfo(out string startProcess, command, script, kvs, expect, notExpect, logExpect, logNotExpect);
@@ -212,7 +213,7 @@ namespace TestAdapterTest
             return newList;
         }
 
-        private static List<KeyValuePair<string, string>> KeyValuePairsFromJson(string json, bool allowSimpleString)
+        private static List<KeyValuePair<string, string>> KeyValuePairsFromJson(string json, string workingDirectory, bool allowSimpleString)
         {
             var kvs = new List<KeyValuePair<string, string>>();
             if (!string.IsNullOrEmpty(json))
@@ -232,9 +233,20 @@ namespace TestAdapterTest
                 }
                 else
                 {
+                    Logger.Log($"KeyValuePairsFromJson: {workingDirectory}");
                     foreach (var item in parsed as JObject)
                     {
-                        kvs.Add(new KeyValuePair<string, string>(item.Key, item.Value.Value<string>()));
+                        var jsonValue = item.Value.Value<string>();
+                        
+                        var checkForFile = jsonValue.Substring(0, 1) == "@" ? Path.Combine(workingDirectory,jsonValue.Substring(1)) : null;
+                        Logger.Log($"KeyValuePairsFromJson: checkForFile: {checkForFile}");
+                        if (checkForFile != null && File.Exists(checkForFile))
+                        {
+                            jsonValue = File.ReadAllText(checkForFile);
+                        }
+                        Logger.Log($"KeyValuePairsFromJson: jsonValue after checking for file = {jsonValue}");
+                        
+                        kvs.Add(new KeyValuePair<string, string>(item.Key, jsonValue));
                     }
                 }
             }
