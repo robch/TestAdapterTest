@@ -3,9 +3,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using YamlDotNet.RepresentationModel;
 
 namespace TestAdapterTest
 {
@@ -59,7 +65,7 @@ namespace TestAdapterTest
             var workingDirectory = YamlTestProperties.Get(test, "working-directory");
             var simulate = YamlTestProperties.Get(test, "simulate");
 
-            foreach (var foreachItem in ExpandForEachGroups(@foreach, workingDirectory))
+            foreach (var foreachItem in ExpandForEachGroups(@foreach))
             {
                 var start = DateTime.Now;
 
@@ -75,18 +81,18 @@ namespace TestAdapterTest
                 var result = CreateTestResult(test, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
                 if (!string.IsNullOrEmpty(foreachItem) && foreachItem != "{}")
                 {
-                    result.DisplayName = $"{test.DisplayName}: {foreachItem.Substring(0, 80)} ....\"";
+                    result.DisplayName = $"{test.DisplayName}: {foreachItem}";
                 }
                 yield return result;
             }
         }
 
-        private static IEnumerable<string> ExpandForEachGroups(string @foreach, string workingDirectory)
+        private static IEnumerable<string> ExpandForEachGroups(string @foreach)
         {
-            var kvs = KeyValuePairsFromJson(@foreach, workingDirectory, false)
+            var kvs = KeyValuePairsFromJson(@foreach, false)
                 .Select(kv => new KeyValuePair<string, IEnumerable<string>>(
                     kv.Key,
-                    kv.Value.Split('\n', StringSplitOptions.RemoveEmptyEntries)));
+                    kv.Value.Split('\n')));
 
             var dicts = new[] { new Dictionary<string, string>() }.ToList();
             foreach (var item in kvs)
@@ -134,8 +140,8 @@ namespace TestAdapterTest
                 logExpect = WriteTextToTempFile(logExpect);
                 logNotExpect = WriteTextToTempFile(logNotExpect);
 
-                var kvs = KeyValuePairsFromJson(arguments, workingDirectory, true);
-                kvs.AddRange(KeyValuePairsFromJson(@foreach, workingDirectory, false));
+                var kvs = KeyValuePairsFromJson(arguments, true);
+                kvs.AddRange(KeyValuePairsFromJson(@foreach, false));
                 kvs = ConvertValuesToAtArgs(kvs, ref filesToDelete);
 
                 var startArgs = GetStartInfo(out string startProcess, command, script, kvs, expect, notExpect, logExpect, logNotExpect);
@@ -206,7 +212,7 @@ namespace TestAdapterTest
             return newList;
         }
 
-        private static List<KeyValuePair<string, string>> KeyValuePairsFromJson(string json, string workingDirectory, bool allowSimpleString)
+        private static List<KeyValuePair<string, string>> KeyValuePairsFromJson(string json, bool allowSimpleString)
         {
             var kvs = new List<KeyValuePair<string, string>>();
             if (!string.IsNullOrEmpty(json))
@@ -226,33 +232,13 @@ namespace TestAdapterTest
                 }
                 else
                 {
-                    Logger.Log($"KeyValuePairsFromJson: {workingDirectory}");
                     foreach (var item in parsed as JObject)
                     {
-                        var jsonValue = item.Value.Value<string>();
-                        
-                        CheckIfFileAndReplaceWithFileContent(jsonValue, workingDirectory, out string updatedValue);
-                        Logger.Log($"KeyValuePairsFromJson: value={jsonValue} after checking for file ={updatedValue}");
-                        
-                        kvs.Add(new KeyValuePair<string, string>(item.Key, updatedValue));
+                        kvs.Add(new KeyValuePair<string, string>(item.Key, item.Value.Value<string>()));
                     }
                 }
             }
             return kvs;
-        }
-
-        private static bool CheckIfFileAndReplaceWithFileContent(string fileName, string workingDirectory, out string fileText)
-        {
-            // spx usually prefixes config with @ - TA will treat string value as file only if the string is prefixed with @
-            var checkForFile = fileName.Substring(0, 1) == "@" ? Path.Combine(workingDirectory,fileName.Substring(1)) : null;
-            if (checkForFile != null && File.Exists(checkForFile))
-            {
-                fileText = File.ReadAllText(checkForFile);
-                return true;
-            }
-
-            fileText = fileName;
-            return false; 
         }
 
         private static string WriteMultilineTsvToTempFile(string text, ref List<string> files)
