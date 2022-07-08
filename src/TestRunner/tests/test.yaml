@@ -49,7 +49,6 @@
     (?# ---------- COMMANDS)
     ^COMMANDS\r?$\n
     ^\r?$\n
-    ^  spx init \[\.\.\.\]            \(see: spx help init\)\r?$\n
     ^  spx config \[\.\.\.\]          \(see: spx help config\)\r?$\n
     ^\r?$\n
     ^  spx recognize \[\.\.\.\]       \(see: spx help recognize\)\r?$\n
@@ -72,27 +71,26 @@
     ^\r?$\n
     ^  spx help examples\r?$\n
     ^\r?$\n
-    ^  spx help find "mp3"\r?$\n
-    ^  spx help find "mp3" --expand\r?$\n
-    ^\r?$\n
-    ^  spx help find topics "examples"\r?$\n
-    ^  spx help list topics\r?$\n
+    ^  spx help find --topics "examples"\r?$\n
+    ^  spx help find --text "example"\r?$\n
+    ^  spx help find \*\r?$\n
     ^\r?$\n
     ^  spx help documentation\r?$\n
     ^\r?$\n
 
 - name: recognize what's the weather like?
   command: recognize --file https://crbn.us/whatstheweatherlike.wav 
-  expect: |
-    ^SESSION STARTED: \w+\r?$\n
-    ^\r?$\n
-    ^Connection CONNECTED\.\.\.\r?$\n
-    RECOGNIZED: What's the weather like\?\r?$\n
-    ^\r?$\n
-    ^SESSION STOPPED: \w+\r?$\n
-  log-expect: |
-    path:.*turn.start
-    path:.*turn.end
+  arguments:
+    expect: |
+      ^SESSION STARTED: \w+\r?$\n
+      ^\r?$\n
+      ^Connection CONNECTED\.\.\.\r?$\n
+      RECOGNIZED: What's the weather like\?\r?$\n
+      ^\r?$\n
+      ^SESSION STOPPED: \w+\r?$\n
+    log-expect: |
+      path:.*turn.start
+      path:.*turn.end
 
 - name: 2 byte recognition
   script: echo ..|spx recognize --file -
@@ -164,3 +162,42 @@
             --continuous --timeout 0
             --expect "SESSION\sSTARTED:;SESSION\sSTOPPED:"
             --fast 0 --not expect "RECOGNIZED:"
+
+    - area: foreach
+      tests:
+
+      - name: from file with token
+        command: recognize
+        foreach:
+          ? [file, expect]
+          : '@inputs.tsv'
+          ? [region, Token, endpoint]
+          : - [westus, '@westus.token', '']
+            - [eastus, '@eastus.token' ]
+            - ['', '', 'wss://...']
+            - endpoint: 'wss://...'
+        simulate: passed
+      
+      - name: from file with key
+        command: recognize
+        foreach:
+          ? [file, expect]
+          : '@inputs.tsv'
+          ? [region, key, endpoint]
+          : - [westus, '@westus.key', '']
+            - [eastus, '@eastus.key' ]
+            - ['', '', 'wss://...']
+            - endpoint: 'wss://...'
+        simulate: passed
+      
+      - name: from file with single column
+        command: recognize
+        foreach:
+          ? [file]
+          : '@files.tsv'
+          ? [region, key, endpoint]
+          : - [westus, '@westus.key', '']
+            - [eastus, '@eastus.key' ]
+            - ['', '', 'wss://...']
+            - endpoint: 'wss://...'
+        simulate: passed

@@ -1,3 +1,4 @@
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -39,6 +40,18 @@ namespace TestAdapterTest
         public static string ToJsonString(this YamlNode node)
         {
             return YamlHelpers.ToYamlOrJsonString(node, false);
+        }
+
+        public static YamlScalarNode ConvertScalarSequenceToMultiLineTsvScalarNode(this YamlNode yaml, TestCase test, string[] keys)
+        {
+            var text = yaml.ConvertScalarSequenceToMultilineTsvString(keys);
+            if (text == null)
+            {
+                text = $"Invalid sequence or sequence value at {test.CodeFilePath}({yaml.Start.Line},{yaml.Start.Column})";
+                Logger.Log(text);
+            }
+
+            return new YamlScalarNode(text);
         }
 
         public static string ConvertScalarSequenceToMultilineTsvString(this YamlNode node, string[] keys = null)
