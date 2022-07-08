@@ -114,6 +114,7 @@ namespace TestAdapterTest
             string fullyQualifiedName = command == null && script == null
                 ? GetFullyQualifiedNameAndCommandFromShortForm(mapping, area, @class, ref command)
                 : GetFullyQualifiedName(mapping, area, @class);
+            fullyQualifiedName ??= GetFullyQualifiedName(area, @class, $"Expected YAML node ('name') at {file.FullName}({mapping.Start.Line})");
 
             var neitherOrBoth = (command == null) == (script == null);
             if (neitherOrBoth && !simulating)
@@ -124,6 +125,7 @@ namespace TestAdapterTest
                 return null;
             }
 
+            Logger.Log($"YamlTestCaseParser.GetTestFromNode: fileName={file.FullName}");
             Logger.Log($"YamlTestCaseParser.GetTests(): new TestCase('{fullyQualifiedName}')");
             var test = new TestCase(fullyQualifiedName, new Uri(YamlTestAdapter.Executor), source)
             {
