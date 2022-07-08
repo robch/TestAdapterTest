@@ -34,17 +34,17 @@ namespace TestAdapterTest
 
         public static void LogInfo(string text)
         {
-            File.AppendAllText("log", $"{DateTime.Now}: INFO: {text}\n");
+            File.AppendAllText(_logPath, $"{DateTime.Now}: INFO: {text}\n");
         }
 
         public static void LogWarning(string text)
         {
-            File.AppendAllText("log", $"{DateTime.Now}: WARNING: {text}\n");
+            File.AppendAllText(_logPath, $"{DateTime.Now}: WARNING: {text}\n");
         }
 
         public static void LogError(string text)
         {
-            File.AppendAllText("log", $"{DateTime.Now}: ERROR: {text}\n");
+            File.AppendAllText(_logPath, $"{DateTime.Now}: ERROR: {text}\n");
         }
 
         #endregion
@@ -53,23 +53,23 @@ namespace TestAdapterTest
 
         public static void DbgTraceInfo(string text)
         {
-            #if DEBUG
+#if DEBUG
             TraceInfo(text);
-            #endif
+#endif
         }
 
         public static void DbgTraceWarning(string text)
         {
-            #if DEBUG
+#if DEBUG
             TraceWarning(text);
-            #endif
+#endif
         }
 
         public static void DbgTraceError(string text)
         {
-            #if DEBUG
+#if DEBUG
             TraceError(text);
-            #endif
+#endif
         }
 
         #endregion
@@ -93,8 +93,19 @@ namespace TestAdapterTest
 
         #endregion
 
-        #region private data
+        #region private methods and data
+
+        private static string GetLogPath()
+        {
+            var pid = Process.GetCurrentProcess().Id.ToString();
+            var time = DateTime.Now.ToFileTime().ToString();
+            return $"log-test-adatper-{time}-{pid}.log";
+        }
+ 
         private static IMessageLogger logger = null;
+
+        private static string _logPath = GetLogPath();
+
         #endregion
     }
 }
