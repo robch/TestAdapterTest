@@ -13,7 +13,7 @@ namespace TestAdapterTest
     {
         public static void Set(TestCase test, string name, string value)
         {
-            Logger.Log($"YamlTestProperties.Set('{name}'='{value.Replace("\n", "\\n")}')");
+            Logger.Log($"TestCaseProperties.Set('{name}'='{value.Replace("\n", "\\n")}')");
             if (!string.IsNullOrEmpty(value))
             {
                 var property = properties[name];
@@ -41,6 +41,8 @@ namespace TestAdapterTest
             { "arguments", RegisterTestCaseProperty("Arguments") },
             { "expect", RegisterTestCaseProperty("Expect") },
             { "not-expect", RegisterTestCaseProperty("NotExpect") },
+            { "log-expect", RegisterTestCaseProperty("LogExpect") },
+            { "log-not-expect", RegisterTestCaseProperty("LogNotExpect") },
             { "simulate", RegisterTestCaseProperty("Simulate") },
             { "working-directory", RegisterTestCaseProperty("WorkingDirectory") }
         };

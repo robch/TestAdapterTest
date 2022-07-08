@@ -55,6 +55,8 @@ namespace TestAdapterTest
 
                 case "expect": return YamlTestProperties.Get(test, "expect");
                 case "not-expect": return YamlTestProperties.Get(test, "not-expect");
+                case "log-expect": return YamlTestProperties.Get(test, "log-expect");
+                case "log-not-expect": return YamlTestProperties.Get(test, "log-not-expect");
 
                 case "simulate": return YamlTestProperties.Get(test, "simulate");
 
@@ -67,6 +69,6 @@ namespace TestAdapterTest
             return tags.Select(x => x.Value).ToArray();
         }
 
-        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName", "Category", "command", "script", "foreach", "arguments", "expect", "not-expect", "simulate" };
+        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName", "Category", "command", "script", "foreach", "arguments", "expect", "not-expect", "log-expect", "log-not-expect", "simulate" };
     }
 }

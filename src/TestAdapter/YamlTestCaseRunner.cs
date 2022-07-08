@@ -29,17 +29,13 @@ namespace TestAdapterTest
 
         private static void TestCaseStart(TestCase test, IFrameworkHandle frameworkHandle)
         {
-            Logger.Log($"YamlTestCaseRunner.TestCaseStart({test.DisplayName})");
+            Logger.Log($"YamlTestCaseRunner.TestStart({test.DisplayName})");
             frameworkHandle.RecordStart(test);
         }
 
         private static TestOutcome TestCaseRun(TestCase test, IFrameworkHandle frameworkHandle, out TestOutcome outcome) 
         {
-            Logger.Log($"YamlTestCaseRunner.TestCaseRun({test.DisplayName})");
-            
-            // run the test case, getting all the results, prior to recording any of those results
-            // (not doing this in this order seems to, for some reason, cause "foreach" test cases to run 5 times!?)
-            var results = TestCaseGetResults(test).ToList();
+            var results = TestCaseGetResults(test);
             foreach (var result in results)
             {
                 frameworkHandle.RecordResult(result);
@@ -58,27 +54,24 @@ namespace TestAdapterTest
 
         private static IEnumerable<TestResult> TestCaseGetResults(TestCase test)
         {
-            Logger.Log($"YamlTestCaseRunner.TestCaseGetResults: ENTER");
-
             var command = YamlTestProperties.Get(test, "command");
             var script = YamlTestProperties.Get(test, "script");
             var @foreach = YamlTestProperties.Get(test, "foreach");
             var arguments = YamlTestProperties.Get(test, "arguments");
             var expect = YamlTestProperties.Get(test, "expect");
             var notExpect = YamlTestProperties.Get(test, "not-expect");
+            var logExpect = YamlTestProperties.Get(test, "log-expect");
+            var logNotExpect = YamlTestProperties.Get(test, "log-not-expect");
             var workingDirectory = YamlTestProperties.Get(test, "working-directory");
             var simulate = YamlTestProperties.Get(test, "simulate");
 
-            var expanded = ExpandForEachGroups(@foreach);
-            Logger.Log($"YamlTestCaseRunner.TestCaseGetResults: expanded count = {expanded.Count()}");
-
-            foreach (var foreachItem in expanded)
+            foreach (var foreachItem in ExpandForEachGroups(@foreach))
             {
                 var start = DateTime.Now;
 
                 var outcome = string.IsNullOrEmpty(simulate)
-                    ? RunTestCase(test, command, script, foreachItem, arguments, expect, notExpect, workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
-                    : SimulateTestCase(test, simulate, command, script, foreachItem, arguments, expect, notExpect, workingDirectory, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace);
+                    ? RunTestCase(test, command, script, foreachItem, arguments, expect, notExpect, logExpect, logNotExpect, workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
+                    : SimulateTestCase(test, simulate, command, script, foreachItem, arguments, expect, notExpect, logExpect, logNotExpect, workingDirectory, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace);
 
                 #if DEBUG
                 additional += outcome == TestOutcome.Failed ? $"\nEXTRA: {ExtraDebugInfo()}" : "";
@@ -88,45 +81,10 @@ namespace TestAdapterTest
                 var result = CreateTestResult(test, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
                 if (!string.IsNullOrEmpty(foreachItem) && foreachItem != "{}")
                 {
-                    result.DisplayName = $"{test.DisplayName}: {RedactSensitiveDataFromForeachItem(foreachItem)}";
+                    result.DisplayName = $"{test.DisplayName}: {foreachItem}";
                 }
                 yield return result;
             }
-
-            Logger.Log($"YamlTestCaseRunner.TestCaseGetResults: EXIT");
-        }
-
-        // Finds "token" in foreach key and redacts its value
-        private static string RedactSensitiveDataFromForeachItem(string foreachItem)
-        {
-            var foreachObject = JObject.Parse(foreachItem);
-            var sb = new StringBuilder();
-            var sw = new StringWriter(sb);
-
-            using (JsonWriter writer = new JsonTextWriter(sw){Formatting = Formatting.None})
-            {
-                writer.WriteStartObject();
-                foreach (var item in foreachObject)
-                {
-                    var keys = item.Key.ToLower().Split("\t").ToArray();
-                    // find index of token in foreach key and redact its value to avoid getting it displayed
-                    var tokenIndex = Array.IndexOf(keys, "token");
-                    var valueString = item.Value;
-                    
-                    if (tokenIndex >= 0)
-                    {
-                        var values = item.Value.ToString().Split("\t").ToArray();
-                        values[tokenIndex] = "***";
-                        valueString = string.Join("\t", values);
-                    }
-                    writer.WritePropertyName(item.Key);
-                    writer.WriteValue(valueString);
-                }
-
-                writer.WriteEndObject();
-            }
-
-            return sb.ToString();
         }
 
         private static IEnumerable<string> ExpandForEachGroups(string @foreach)
@@ -146,7 +104,11 @@ namespace TestAdapterTest
                     .ToList();
             }
 
-            return dicts.Select(d => JsonConvert.SerializeObject(d));
+            foreach (var d in dicts)
+            {
+                var json = JsonConvert.SerializeObject(d);
+                yield return json;
+            }
         }
 
         private static Dictionary<string, string> DupAndAdd(Dictionary<string, string> d, string key, string value)
@@ -156,7 +118,7 @@ namespace TestAdapterTest
             return dup;
         }
 
-        private static TestOutcome RunTestCase(TestCase test, string command, string script, string @foreach, string arguments, string expect, string notExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
+        private static TestOutcome RunTestCase(TestCase test, string command, string script, string @foreach, string arguments, string expect, string notExpect, string logExpect, string logNotExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
         {
             var outcome = TestOutcome.None;
 
@@ -175,12 +137,14 @@ namespace TestAdapterTest
 
                 expect = WriteTextToTempFile(expect);
                 notExpect = WriteTextToTempFile(notExpect);
+                logExpect = WriteTextToTempFile(logExpect);
+                logNotExpect = WriteTextToTempFile(logNotExpect);
 
                 var kvs = KeyValuePairsFromJson(arguments, true);
                 kvs.AddRange(KeyValuePairsFromJson(@foreach, false));
                 kvs = ConvertValuesToAtArgs(kvs, ref filesToDelete);
 
-                var startArgs = GetStartInfo(out string startProcess, command, script, kvs, expect, notExpect, ref filesToDelete);
+                var startArgs = GetStartInfo(out string startProcess, command, script, kvs, expect, notExpect, logExpect, logNotExpect);
                 stackTrace = stackTrace ?? $"{startProcess} {startArgs}";
 
                 Logger.Log($"Process.Start('{startProcess} {startArgs}')");
@@ -218,6 +182,8 @@ namespace TestAdapterTest
                 if (script != null) File.Delete(script);
                 if (expect != null) File.Delete(expect);
                 if (notExpect != null) File.Delete(notExpect);
+                if (logExpect != null) File.Delete(logExpect);
+                if (logNotExpect != null) File.Delete(logNotExpect);
                 filesToDelete?.ForEach(x => File.Delete(x));
             }
 
@@ -232,7 +198,7 @@ namespace TestAdapterTest
             var newList = new List<KeyValuePair<string, string>>();
             foreach (var item in kvs)
             {
-                if (item.Value.Count(x => x == '\t' || x == '\r' || x == '\n' || x == '\f' || x == '\"') > 0)
+                if (item.Value.Count(x => x == '\t' || x == '\r' || x == '\n' || x == '\f') > 0)
                 {
                     string file = WriteMultilineTsvToTempFile(item.Value, ref files);
                     newList.Add(new KeyValuePair<string, string>(item.Key, $"@{file}"));
@@ -326,8 +292,10 @@ namespace TestAdapterTest
 
                 File.WriteAllText(tempFile, text);
 
-                var content = File.ReadAllText(tempFile).Replace("\n", "\\n");
-                Logger.Log($"FILE: {tempFile}: '{content}'");
+                #if DEBUG
+                    var content = File.ReadAllText(tempFile).Replace("\n", "\\n");
+                    Logger.Log($"FILE: {tempFile}: '{content}'");
+                #endif
 
                 return tempFile;
             }
@@ -363,44 +331,31 @@ namespace TestAdapterTest
                 return found;
             }
 
-            var message = $"FindCli: Not found! ... using {cli}";
-            Logger.LogWarning(message);
-            Logger.TraceWarning(message);
-
+            Logger.Log($"FindCli: Not found! ... using {cli}");
             return cli;
         }
 
-        private static string GetStartInfo(out string startProcess, string command, string script, List<KeyValuePair<string, string>> kvs, string expect, string notExpect, ref List<string> files)
+        private static string GetStartInfo(out string startProcess, string command, string script, List<KeyValuePair<string, string>> kvs, string expect, string notExpect, string logExpect, string logNotExpect)
         {
             var cli = "spx";
             startProcess = FindCli(cli);
 
             var isCommand = !string.IsNullOrEmpty(command) || string.IsNullOrEmpty(script);
-            if (isCommand)
-            {
-                command = $"{command} {GetKeyValueArgs(kvs)}";
-
-                var expectLess = string.IsNullOrEmpty(expect) && string.IsNullOrEmpty(notExpect);
-                if (expectLess) return command;
-
-                command = WriteTextToTempFile(command);
-                files ??= new List<string>();
-                files.Add(command);
-
-                return $"quiet run --command @{command} {GetAtArgs(expect, notExpect)}";
-            }
+            if (isCommand) return $"{command} {GetKeyValueArgs(kvs)} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}";
 
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             return isWindows
-                ? $"quiet run --cmd --script {script} {GetKeyValueArgs(kvs)} {GetAtArgs(expect, notExpect)}"
-                : $"quiet run --process /bin/bash --pre.script -l --script {script} {GetKeyValueArgs(kvs)} {GetAtArgs(expect, notExpect)}";
+                ? $"quiet run --cmd --script {script} {GetKeyValueArgs(kvs)} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}"
+                : $"quiet run --process /bin/bash --pre.script -l --script {script} {GetKeyValueArgs(kvs)} {GetAtArgs(expect, notExpect, logExpect, logNotExpect)}";
         }
 
-        private static string GetAtArgs(string expect, string notExpect)
+        private static string GetAtArgs(string expect, string notExpect, string logExpect, string logNotExpect)
         {
             var atArgs = $"";
             if (!string.IsNullOrEmpty(expect)) atArgs += $" --expect @{expect}";
             if (!string.IsNullOrEmpty(notExpect)) atArgs += $" --not expect @{notExpect}";
+            if (!string.IsNullOrEmpty(logExpect)) atArgs += $" --log expect @{logExpect}";
+            if (!string.IsNullOrEmpty(logNotExpect)) atArgs += $" --log not expect @{logNotExpect}";
             return atArgs.TrimStart(' ');
         }
 
@@ -434,7 +389,7 @@ namespace TestAdapterTest
             return args.ToString().TrimEnd();
         }
 
-        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string command, string script, string @foreach, string arguments, string expect, string notExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
+        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string command, string script, string @foreach, string arguments, string expect, string notExpect, string logExpect, string logNotExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
         {
             var sb = new StringBuilder();
             sb.AppendLine($"command='{command?.Replace("\n", "\\n")}'");
@@ -443,6 +398,8 @@ namespace TestAdapterTest
             sb.AppendLine($"arguments='{arguments?.Replace("\n", "\\n")}'");
             sb.AppendLine($"expect='{expect?.Replace("\n", "\\n")}'");
             sb.AppendLine($"not-expect='{notExpect?.Replace("\n", "\\n")}'");
+            sb.AppendLine($"log-expect='{logExpect?.Replace("\n", "\\n")}'");
+            sb.AppendLine($"log-not-expect='{logNotExpect?.Replace("\n", "\\n")}'");
             sb.AppendLine($"working-directory='{workingDirectory}'");
 
             stdOut = sb.ToString();
@@ -486,7 +443,7 @@ namespace TestAdapterTest
 
         private static void TestCaseStop(TestCase test, IFrameworkHandle frameworkHandle, TestOutcome outcome)
         {
-            Logger.Log($"YamlTestCaseRunner.TestCaseStop({test.DisplayName})");
+            Logger.Log($"YamlTestCaseRunner.TestEnd({test.DisplayName})");
             frameworkHandle.RecordEnd(test, outcome);
         }
 

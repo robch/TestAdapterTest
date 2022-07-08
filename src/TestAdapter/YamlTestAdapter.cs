@@ -17,25 +17,21 @@ namespace TestAdapterTest
     {
         public static IEnumerable<TestCase> GetTestsFromFiles(IEnumerable<string> sources)
         {
-            Logger.Log($"YamlTestAdapter.GetTestsFromFiles(source.Count={sources.Count()})");
-
-            var tests = new List<TestCase>();
             foreach (var source in sources)
             {
-                Logger.Log($"YamlTestAdapter.GetTestsFromFiles('{source}')");
-                tests.AddRange(GetTestsFromFile(source));
+                foreach (var test in GetTestsFromFile(source))
+                {
+                    yield return test;
+                }
             }
-
-            Logger.Log($"YamlTestAdapter.GetTestsFromFiles() found count={tests.Count()}");
-            return tests;
         }
 
         public static IEnumerable<TestCase> GetTestsFromFile(string source)
         {
-           Logger.Log($"YamlTestAdapter.GetTestsFromFile('{source}')");
+           Logger.Log($"TestAdapter::GetTestsFromFile('{source}')");
 
            var file = new FileInfo(source);
-           Logger.Log($"YamlTestAdapter.GetTestsFromFile('{source}'): Extension={file.Extension}");
+           Logger.Log($"TestAdapter::GetTestsFromFile('{source}'): Extension={file.Extension}");
 
             return file.Extension.Trim('.') == FileExtensionYaml.Trim('.')
                 ? GetTestsFromYaml(source, file)
@@ -64,7 +60,7 @@ namespace TestAdapterTest
             //     Logger.Log($"a.FullName={a.FullName}");
             // }
 
-            Logger.Log($"YamlTestAdapter.GetTestsFromSource('{source}'): sourceOk = {sourceOk}");
+            Logger.Log($"GetTestsFromSource('{source}'): sourceOk = {sourceOk}");
 
             return !sourceOk
                 ? Enumerable.Empty<TestCase>()
@@ -73,7 +69,7 @@ namespace TestAdapterTest
 
         private static IEnumerable<TestCase> GetTestsFromDirectory(string source, DirectoryInfo directory)
         {
-            Logger.Log($"YamlTestAdapter.GetTestsFromDirectory('{source}', '{directory.FullName}'): ENTER");
+            Logger.Log($"TestAdapter::GetTestsFromDirectory('{source}', '{directory.FullName}'): ENTER");
             foreach (var file in FindFiles(directory))
             {
                 foreach (var test in GetTestsFromYaml(source, file))
@@ -81,7 +77,7 @@ namespace TestAdapterTest
                     yield return test;
                 }
             }
-           Logger.Log($"YamlTestAdapter.GetTestsFromDirectory('{source}', '{directory.FullName}'): EXIT");
+           Logger.Log($"TestAdapter::GetTestsFromDirectory('{source}', '{directory.FullName}'): EXIT");
         }
 
         private static IEnumerable<FileInfo> FindFiles(DirectoryInfo directory)
@@ -91,23 +87,23 @@ namespace TestAdapterTest
 
         private static IEnumerable<TestCase> GetTestsFromYaml(string source, FileInfo file)
         {
-            Logger.Log($"YamlTestAdapter.GetTestsFromYaml('{source}', '{file.FullName}'): ENTER");
+            Logger.Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): ENTER");
             foreach (var test in YamlTestCaseParser.TestCasesFromYaml(source, file))
             {
                 yield return test;
             }
-           Logger.Log($"YamlTestAdapter.GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
+           Logger.Log($"TestAdapter::GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
         }
 
         private static IEnumerable<TestCase> FilterTestCases(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            Logger.Log($"YamlTestAdapter.FilterTestCases()");
+            Logger.Log($"TestAdapter.FilterTestCases()");
             return YamlTestCaseFilter.FilterTestCases(tests, runContext, frameworkHandle);
         }
 
         private static TestOutcome RunAndRecordTestCase(TestCase test, IFrameworkHandle frameworkHandle)
         {
-            Logger.Log($"YamlTestAdapter.TestRunAndRecord({test.DisplayName})");
+            Logger.Log($"TestAdapter.TestRunAndRecord({test.DisplayName})");
             return YamlTestCaseRunner.RunAndRecordTestCase(test, frameworkHandle);
         }
 
