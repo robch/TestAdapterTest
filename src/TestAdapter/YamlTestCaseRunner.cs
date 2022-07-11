@@ -99,7 +99,10 @@ namespace TestAdapterTest
         // Finds "token" in foreach key and redacts its value
         private static string RedactSensitiveDataFromForeachItem(string foreachItem)
         {
+            Logger.Log($"ForeachItem: {foreachItem}");
             var foreachObject = JObject.Parse(foreachItem);
+            Logger.Log($"ForeachObject: {foreachObject}");
+            
             var sb = new StringBuilder();
             var sw = new StringWriter(sb);
 
@@ -116,8 +119,11 @@ namespace TestAdapterTest
                     if (tokenIndex >= 0)
                     {
                         var values = item.Value.ToString().Split("\t").ToArray();
-                        values[tokenIndex] = "***";
-                        valueString = string.Join("\t", values);
+                        if (values.Count() == keys.Count())
+                        {
+                            values[tokenIndex] = "***";
+                            valueString = string.Join("\t", values);
+                        }
                     }
                     writer.WritePropertyName(item.Key);
                     writer.WriteValue(valueString);
