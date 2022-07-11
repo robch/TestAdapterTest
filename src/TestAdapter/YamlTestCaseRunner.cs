@@ -100,6 +100,7 @@ namespace TestAdapterTest
         private static string RedactSensitiveDataFromForeachItem(string foreachItem)
         {
             var foreachObject = JObject.Parse(foreachItem);
+            
             var sb = new StringBuilder();
             var sw = new StringWriter(sb);
 
@@ -108,16 +109,24 @@ namespace TestAdapterTest
                 writer.WriteStartObject();
                 foreach (var item in foreachObject)
                 {
-                    var keys = item.Key.ToLower().Split("\t").ToArray();
-                    // find index of token in foreach key and redact its value to avoid getting it displayed
+                    if (string.IsNullOrWhiteSpace(item.Value.ToString()))
+                    {
+                        continue;
+                    }
+                    var keys = item.Key.ToLower().Split("\t", StringSplitOptions.RemoveEmptyEntries);
+                    
+                    // find index of "token" in foreach key and redact its value to avoid getting it displayed
                     var tokenIndex = Array.IndexOf(keys, "token");
                     var valueString = item.Value;
                     
                     if (tokenIndex >= 0)
                     {
-                        var values = item.Value.ToString().Split("\t").ToArray();
-                        values[tokenIndex] = "***";
-                        valueString = string.Join("\t", values);
+                        var values = item.Value.ToString().Split("\t", StringSplitOptions.RemoveEmptyEntries);
+                        if (values.Count() == keys.Count())
+                        {
+                            values[tokenIndex] = "***";
+                            valueString = string.Join("\t", values);
+                        }
                     }
                     writer.WritePropertyName(item.Key);
                     writer.WriteValue(valueString);
@@ -134,7 +143,7 @@ namespace TestAdapterTest
             var kvs = KeyValuePairsFromJson(@foreach, false)
                 .Select(kv => new KeyValuePair<string, IEnumerable<string>>(
                     kv.Key,
-                    kv.Value.Split('\n')));
+                    kv.Value.Split('\n', StringSplitOptions.RemoveEmptyEntries)));
 
             var dicts = new[] { new Dictionary<string, string>() }.ToList();
             foreach (var item in kvs)
