@@ -296,6 +296,7 @@ namespace TestAdapterTest
                 if (TryGetFileContentFromScalar(scalarValue, workingDirectory, out string fileContent))
                 {
                     value = fileContent;
+                    Logger.Log($"NormalizeToScalarKeyValuePair: value is YamlScalarNode={value is YamlScalarNode}");
                     if (!(value is YamlScalarNode))
                     {
                         value = value.ConvertScalarSequenceToMultiLineTsvScalarNode(test, keys);
@@ -309,12 +310,22 @@ namespace TestAdapterTest
 
         private static bool TryGetFileContentFromScalar(string scalar, string workingDirectory, out string fileContent)
         {
+            Logger.Log($"YamlTestCaseParser.TryGetFileContentFromScalar: scalar={scalar}");
+            Logger.Log($"YamlTestCaseParser.TryGetFileContentFromScalar: isScalarStartsWith@={scalar.StartsWith("@")}");
+            Logger.Log($"YamlTestCaseParser.TryGetFileContentFromScalar: isScalarHasInvalidFilenameChars@={Path.GetFileName(scalar).IndexOfAny(Path.GetInvalidFileNameChars())}");
+            
             // Treat this scalar value as file if it starts with '@' and does not have InvalidFileNameChars
-            if (scalar.StartsWith("@")  && !(scalar.IndexOfAny(Path.GetInvalidFileNameChars()) > 0))
+            if (scalar.StartsWith("@")  && !(Path.GetFileName(scalar).IndexOfAny(Path.GetInvalidFileNameChars()) > 0))
             {
                 var fileName = scalar.Substring(1);
-                var filePath = Path.Combine(workingDirectory, fileName);
-                
+
+                // check if the file already exists
+                var filePath = fileName;
+                if (!File.Exists(filePath))
+                {
+                    filePath = Path.Combine(workingDirectory, fileName);
+                }
+
                 Logger.Log($"YamlTestCaseParser.TryGetFileContentFromScalar: Read file contents from {filePath}");
                 if (File.Exists(filePath))
                 {

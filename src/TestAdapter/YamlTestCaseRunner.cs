@@ -241,6 +241,9 @@ namespace TestAdapterTest
             var newList = new List<KeyValuePair<string, string>>();
             foreach (var item in kvs)
             {
+                Logger.Log($"YamlTestCaseRunner.ConvertValuesToAtArgs: item.Value={item.Value}");
+                Logger.Log($"YamlTestCaseRunner.ConvertValuesToAtArgs: item.Value should convert to file ={item.Value.Count(x => x == '\t' || x == '\r' || x == '\n' || x == '\f' || x == '\"') > 0}");
+                
                 if (item.Value.Count(x => x == '\t' || x == '\r' || x == '\n' || x == '\f' || x == '\"') > 0)
                 {
                     string file = WriteMultilineTsvToTempFile(item.Value, ref files);
