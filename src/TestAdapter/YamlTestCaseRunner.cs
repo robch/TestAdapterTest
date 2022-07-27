@@ -113,7 +113,7 @@ namespace TestAdapterTest
                     {
                         continue;
                     }
-                    var keys = item.Key.ToLower().Split("\t", StringSplitOptions.RemoveEmptyEntries);
+                    var keys = item.Key.ToLower().Split(new char[] {'\t'}, StringSplitOptions.RemoveEmptyEntries);
                     
                     // find index of "token" in foreach key and redact its value to avoid getting it displayed
                     var tokenIndex = Array.IndexOf(keys, "token");
@@ -121,7 +121,7 @@ namespace TestAdapterTest
                     
                     if (tokenIndex >= 0)
                     {
-                        var values = item.Value.ToString().Split("\t", StringSplitOptions.RemoveEmptyEntries);
+                        var values = item.Value.ToString().Split(new char[] {'\t'}, StringSplitOptions.RemoveEmptyEntries);
                         if (values.Count() == keys.Count())
                         {
                             values[tokenIndex] = "***";
@@ -143,7 +143,7 @@ namespace TestAdapterTest
             var kvs = KeyValuePairsFromJson(@foreach, false)
                 .Select(kv => new KeyValuePair<string, IEnumerable<string>>(
                     kv.Key,
-                    kv.Value.Split('\n', StringSplitOptions.RemoveEmptyEntries)));
+                    kv.Value.Split("\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)));
 
             var dicts = new[] { new Dictionary<string, string>() }.ToList();
             foreach (var item in kvs)
@@ -374,8 +374,7 @@ namespace TestAdapterTest
 
             var message = $"FindCli: Not found! ... using {cli}";
             Logger.LogWarning(message);
-            Logger.TraceWarning(message);
-
+            
             return cli;
         }
 

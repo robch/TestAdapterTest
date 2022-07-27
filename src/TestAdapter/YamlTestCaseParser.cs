@@ -125,7 +125,6 @@ namespace TestAdapterTest
                 return null;
             }
 
-            Logger.Log($"YamlTestCaseParser.GetTestFromNode: fileName={file.FullName}");
             Logger.Log($"YamlTestCaseParser.GetTests(): new TestCase('{fullyQualifiedName}')");
             var test = new TestCase(fullyQualifiedName, new Uri(YamlTestAdapter.Executor), source)
             {
@@ -310,10 +309,16 @@ namespace TestAdapterTest
         private static bool TryGetFileContentFromScalar(string scalar, string workingDirectory, out string fileContent)
         {
             // Treat this scalar value as file if it starts with '@' and does not have InvalidFileNameChars
-            if (scalar.StartsWith("@")  && !(scalar.IndexOfAny(Path.GetInvalidFileNameChars()) > 0))
+            if (scalar.StartsWith("@")  && Path.GetFileName(scalar).IndexOfAny(Path.GetInvalidFileNameChars()) == -1)
             {
                 var fileName = scalar.Substring(1);
-                var filePath = Path.Combine(workingDirectory, fileName);
+                
+                // check if the file already exists
+                var filePath = fileName;
+                if (!File.Exists(filePath))
+                {
+                    filePath = Path.Combine(workingDirectory, fileName);
+                }
                 
                 Logger.Log($"YamlTestCaseParser.TryGetFileContentFromScalar: Read file contents from {filePath}");
                 if (File.Exists(filePath))
