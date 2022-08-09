@@ -35,6 +35,7 @@ namespace TestAdapterTest
         }
 
         private static readonly Dictionary<string, TestProperty> properties = new Dictionary<string, TestProperty>() {
+            { "cli", RegisterTestCaseProperty("CLI") },
             { "command", RegisterTestCaseProperty("Command") },
             { "script", RegisterTestCaseProperty("Script") },
             { "foreach", RegisterTestCaseProperty("ForEach") },
@@ -42,6 +43,7 @@ namespace TestAdapterTest
             { "expect", RegisterTestCaseProperty("Expect") },
             { "not-expect", RegisterTestCaseProperty("NotExpect") },
             { "simulate", RegisterTestCaseProperty("Simulate") },
+            { "timeout", RegisterTestCaseProperty("Timeout") },
             { "working-directory", RegisterTestCaseProperty("WorkingDirectory") }
         };
 

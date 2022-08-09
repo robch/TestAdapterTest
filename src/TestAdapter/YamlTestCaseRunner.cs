@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -60,6 +60,7 @@ namespace TestAdapterTest
         {
             Logger.Log($"YamlTestCaseRunner.TestCaseGetResults: ENTER");
 
+            var cli = YamlTestProperties.Get(test, "cli");
             var command = YamlTestProperties.Get(test, "command");
             var script = YamlTestProperties.Get(test, "script");
             var @foreach = YamlTestProperties.Get(test, "foreach");
@@ -67,6 +68,7 @@ namespace TestAdapterTest
             var expect = YamlTestProperties.Get(test, "expect");
             var notExpect = YamlTestProperties.Get(test, "not-expect");
             var workingDirectory = YamlTestProperties.Get(test, "working-directory");
+            var timeout = int.Parse(YamlTestProperties.Get(test, "timeout"));
             var simulate = YamlTestProperties.Get(test, "simulate");
 
             var expanded = ExpandForEachGroups(@foreach);
@@ -77,8 +79,8 @@ namespace TestAdapterTest
                 var start = DateTime.Now;
 
                 var outcome = string.IsNullOrEmpty(simulate)
-                    ? RunTestCase(test, command, script, foreachItem, arguments, expect, notExpect, workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
-                    : SimulateTestCase(test, simulate, command, script, foreachItem, arguments, expect, notExpect, workingDirectory, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace);
+                    ? RunTestCase(test, cli, command, script, foreachItem, arguments, expect, notExpect, workingDirectory, timeout, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
+                    : SimulateTestCase(test, simulate, cli, command, script, foreachItem, arguments, expect, notExpect, workingDirectory, out stdOut, out stdErr, out errorMessage, out stackTrace, out additional, out debugTrace);
 
                 #if DEBUG
                 additional += outcome == TestOutcome.Failed ? $"\nEXTRA: {ExtraDebugInfo()}" : "";
@@ -88,12 +90,44 @@ namespace TestAdapterTest
                 var result = CreateTestResult(test, start, stop, stdOut, stdErr, errorMessage, stackTrace, additional, debugTrace, outcome);
                 if (!string.IsNullOrEmpty(foreachItem) && foreachItem != "{}")
                 {
-                    result.DisplayName = $"{test.DisplayName}: {RedactSensitiveDataFromForeachItem(foreachItem)}";
+                    result.DisplayName = GetTestResultDisplayName(test.DisplayName, foreachItem);
                 }
                 yield return result;
             }
 
             Logger.Log($"YamlTestCaseRunner.TestCaseGetResults: EXIT");
+        }
+
+        private static string GetTestResultDisplayName(string testDisplayName, string foreachItem)
+        {
+            var testResultDisplayName = testDisplayName;
+
+            if(JToken.Parse(foreachItem).Type == JTokenType.Object)
+            {
+                // get JObject properties
+                JObject foreachItemObject = JObject.Parse(foreachItem);
+                foreach(var property in foreachItemObject.Properties())
+                {
+                    var keys = property.Name.Split(new char[] { '\t' });
+                    var values = property.Value.Value<string>().Split(new char[] { '\t' });
+
+                    for (int i = 0; i < keys.Length; i++)
+                    {
+                        if (testResultDisplayName.Contains("{" + keys[i] + "}"))
+                        {
+                            testResultDisplayName = testResultDisplayName.Replace("{" +keys[i] + "}", values[i]);
+                        }
+                    }
+                }
+            }
+
+            // if the testDisplayName was not templatized, ie, it had no {}
+            if (testResultDisplayName == testDisplayName)
+            {
+                return $"{testDisplayName}: {RedactSensitiveDataFromForeachItem(foreachItem)}";
+            }
+
+            return testResultDisplayName;
         }
 
         // Finds "token" in foreach key and redacts its value
@@ -113,7 +147,7 @@ namespace TestAdapterTest
                     {
                         continue;
                     }
-                    var keys = item.Key.ToLower().Split(new char[] {'\t'}, StringSplitOptions.RemoveEmptyEntries);
+                    var keys = item.Key.ToLower().Split(new char[] {'\t'});
                     
                     // find index of "token" in foreach key and redact its value to avoid getting it displayed
                     var tokenIndex = Array.IndexOf(keys, "token");
@@ -121,7 +155,7 @@ namespace TestAdapterTest
                     
                     if (tokenIndex >= 0)
                     {
-                        var values = item.Value.ToString().Split(new char[] {'\t'}, StringSplitOptions.RemoveEmptyEntries);
+                        var values = item.Value.ToString().Split(new char[] {'\t'});
                         if (values.Count() == keys.Count())
                         {
                             values[tokenIndex] = "***";
@@ -165,7 +199,7 @@ namespace TestAdapterTest
             return dup;
         }
 
-        private static TestOutcome RunTestCase(TestCase test, string command, string script, string @foreach, string arguments, string expect, string notExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
+        private static TestOutcome RunTestCase(TestCase test, string cli, string command, string script, string @foreach, string arguments, string expect, string notExpect, string workingDirectory, int timeout, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
         {
             var outcome = TestOutcome.None;
 
@@ -189,31 +223,40 @@ namespace TestAdapterTest
                 kvs.AddRange(KeyValuePairsFromJson(@foreach, false));
                 kvs = ConvertValuesToAtArgs(kvs, ref filesToDelete);
 
-                var startArgs = GetStartInfo(out string startProcess, command, script, kvs, expect, notExpect, ref filesToDelete);
+                var startArgs = GetStartInfo(out string startProcess, cli, command, script, kvs, expect, notExpect, ref filesToDelete);
                 stackTrace = stackTrace ?? $"{startProcess} {startArgs}";
 
                 Logger.Log($"Process.Start('{startProcess} {startArgs}')");
                 var startInfo = new ProcessStartInfo(startProcess, startArgs)
                 {
                     UseShellExecute = false,
+                    RedirectStandardInput = true,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
                     WorkingDirectory = workingDirectory
                 };
+                UpdatePathEnvironment(startInfo);
 
                 var process = Process.Start(startInfo);
                 stdOutTask = process.StandardOutput.ReadToEndAsync();
                 stdErrTask = process.StandardError.ReadToEndAsync();
 
-                process.WaitForExit();
-                outcome = process.ExitCode == 0
+                var exitedNotKilled = WaitForExit(process, timeout);
+                outcome = exitedNotKilled && process.ExitCode == 0
                     ? TestOutcome.Passed
                     : TestOutcome.Failed;
 
-                errorMessage = $"EXIT CODE: {process.ExitCode}";
+                var exitCode = exitedNotKilled
+                    ? process.ExitCode.ToString()
+                    : $"(did not exit; timedout; killed)";
+                var exitTime = exitedNotKilled
+                    ? process.ExitTime.ToString()
+                    : DateTime.UtcNow.ToString();
+
+                errorMessage = $"EXIT CODE: {exitCode}";
                 additional = additional
-                    + $" STOP TIME: {process.ExitTime}"
-                    + $" EXIT CODE: {process.ExitCode}";
+                    + $" STOP TIME: {exitTime}"
+                    + $" EXIT CODE: {exitCode}";
             }
             catch (Exception ex)
             {
@@ -343,7 +386,41 @@ namespace TestAdapterTest
             return null;
         }
 
+
+        private static string FindCacheCli(string cli)
+        {
+            if (_cliCache.ContainsKey(cli))
+            {
+                return _cliCache[cli];
+            }
+
+            var found = FindCli(cli);
+            _cliCache[cli] = found;
+
+            return found;
+        }
+
         private static string FindCli(string cli)
+        {
+            var specified = !string.IsNullOrEmpty(cli);
+            if (specified)
+            {
+                var found = FindCliOrNull(cli);
+                return found != null
+                    ? CliFound(cli, found)              // use what we found
+                    : CliNotFound(cli);                 // use what was specified
+            }
+            else
+            {
+                var clis = new[] { "spx", "vz" };
+                var found = PickCliOrNull(clis);
+                return found != null
+                    ? PickCliFound(clis, found)         // use what we found
+                    : PickCliNotFound(clis, clis[0]);   // use spx
+            }
+        }
+
+        private static string FindCliOrNull(string cli)
         {
             var dll = $"{cli}.dll";
             var exe = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"{cli}.exe" : cli;
@@ -354,34 +431,195 @@ namespace TestAdapterTest
             var path = $"{path3}{Path.PathSeparator}{path2}{Path.PathSeparator}{path1}";
 
             var paths = path.Split(Path.PathSeparator);
-            var found = paths
-                .Where(x => File.Exists(Path.Combine(x, dll)) && File.Exists(Path.Combine(x, exe)))
-                .Select(x => Path.Combine(x, exe))
-                .FirstOrDefault();
-            if (string.IsNullOrEmpty(found))
+            foreach (var part2 in new string[]{ "", "net6.0"})
             {
-                found = paths
-                    .Where(x => File.Exists(Path.Combine(x, "net6.0", dll)) && File.Exists(Path.Combine(x, "net6.0", dll)))
-                    .Select(x => Path.Combine(x, "net6.0", exe))
-                    .FirstOrDefault();
+                foreach (var part1 in paths)
+                {
+                    var checkExe = Path.Combine(part1, part2, exe);
+                    if (File.Exists(checkExe))
+                    {
+                        // Logger.TraceInfo($"FindCliOrNull: Found CLI: {checkExe}");
+                        var checkDll = FindCliDllOrNull(checkExe, dll);
+                        if (checkDll != null)
+                        {
+                            // Logger.TraceInfo($"FindCliOrNull: Found DLL: {checkDll}");
+                            return checkExe;
+                        }
+                    }
+                }
             }
 
-            if (!string.IsNullOrEmpty(found))
-            {
-                Logger.Log($"FindCli: Found {cli}={found}");
-                return found;
-            }
+            return null;
+        }
 
-            var message = $"FindCli: Not found! ... using {cli}";
+        private static string FindCliDllOrNull(string cli, string dll)
+        {
+            var fi = new FileInfo(cli);
+            if (!fi.Exists) return null;
+
+            var check = Path.Combine(fi.DirectoryName, dll);
+            if (File.Exists(check)) return check;
+
+            var matches = fi.Directory.GetFiles(dll, SearchOption.AllDirectories);
+            if (matches.Length == 1) return matches.First().FullName;
+
+            return null;
+        }
+
+        private static string CliFound(string cli, string found)
+        {
+            Logger.Log($"CliFound: CLI specified ({cli}); found; using {found}");
+            return found;
+        }
+
+        private static string CliNotFound(string cli)
+        {
+            var message = $"CliNotFound: CLI specified ({cli}); tried searching PATH and working directory; not found; using {cli}";
             Logger.LogWarning(message);
-            
+            // Logger.TraceWarning(message);
             return cli;
         }
 
-        private static string GetStartInfo(out string startProcess, string command, string script, List<KeyValuePair<string, string>> kvs, string expect, string notExpect, ref List<string> files)
+        private static string PickCliOrNull(IEnumerable<string> clis)
         {
-            var cli = "spx";
-            startProcess = FindCli(cli);
+            var cliOrNulls = new List<string>();
+            foreach (var cli in clis)
+            {
+                cliOrNulls.Add(FindCliOrNull(cli));
+            }
+
+            var clisFound = cliOrNulls.Where(cli => !string.IsNullOrEmpty(cli));
+            return clisFound.Count() == 1
+                ? clisFound.First()
+                : null;
+        }
+
+        private static void PickCliUpdateYamlDefaultsFileWarning(IEnumerable<string> clis)
+        {
+            var message = string.Join(" or ", clis.Select(cli => $"`cli: {cli}`"));
+            message = $"PickCli: CLI not specified; please create/update {YamlTestAdapter.YamlDefaultsFileName} with one of: {message}";
+            Logger.LogWarning(message);
+            Logger.TraceWarning(message);
+        }
+
+        private static string PickCliFound(IEnumerable<string> clis, string cli)
+        {
+            PickCliUpdateYamlDefaultsFileWarning(clis);
+
+            var message = $"PickCliFound: CLI not specified; found 1 CLI; using {cli}";
+            Logger.LogInfo(message);
+            Logger.TraceInfo(message);
+            return cli;
+        }
+
+        private static string PickCliNotFound(IEnumerable<string> clis, string cli)
+        {
+            PickCliUpdateYamlDefaultsFileWarning(clis);
+
+            var message = $"PickCliNotFound: CLI not specified; tried searching PATH and working directory; found 0 or >1 CLIs; using {cli}";
+            Logger.LogInfo(message);
+            Logger.TraceInfo(message);
+            return cli;
+        }
+
+        private static IEnumerable<string> GetPossibleRunTimeLocations()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return new string[]{ "", "runtimes/win-x64/native/", "../runtimes/win-x64/native/" };
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return new string[]{ "", "runtimes/linux-x64/native/", "../../runtimes/linux-x64/native/" };
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return new string[]{ "", "runtimes/osx-x64/native/", "../../runtimes/osx-x64/native/" };
+            }
+            return new string[]{ "" };
+        }
+
+        static void UpdatePathEnvironment(ProcessStartInfo startInfo)
+        {
+            var cli = new FileInfo(startInfo.FileName);
+            if (cli.Exists)
+            {
+                var dll = FindCliDllOrNull(cli.FullName, cli.Name.Replace(".exe", "") + ".dll");
+                if (dll != null)
+                {
+                    var cliPath = cli.Directory.FullName;
+                    var dllPath = new FileInfo(dll).Directory.FullName;
+
+                    var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+                    var pathVar = isWindows ? "PATH" : "LD_LIBRARY_PATH";
+                    var path = Environment.GetEnvironmentVariable(pathVar) ?? "";
+
+                    var locations = GetPossibleRunTimeLocations();
+                    path = AddToPath(path, cliPath, locations);
+                    path = AddToPath(path, dllPath, locations);
+
+                    startInfo.Environment.Add(pathVar, path);
+                    Logger.LogInfo($"UpdatePathEnvironment: {pathVar}={path}");
+                }
+            }
+        }
+
+        private static string AddToPath(string path, string value, IEnumerable<string> locations)
+        {
+            foreach (var location in locations)
+            {
+                var check = Path.Combine(value, location);
+                if (Directory.Exists(check))
+                {
+                    path = AddToPath(path, check);
+                }
+            }
+            return path;
+        }
+
+        private static string AddToPath(string path, string value)
+        {
+            var paths = path.Split(Path.PathSeparator);
+            return !paths.Contains(value)
+                ? $"{value}{Path.PathSeparator}{path}".Trim(Path.PathSeparator)
+                : path;
+        }
+
+        private static bool WaitForExit(Process process, int timeout)
+        {
+            var completed = process.WaitForExit(timeout);
+            if (!completed)
+            {
+                var name = process.ProcessName;
+                var message = $"Timedout! Stopping process ({name})...";
+                Logger.LogWarning(message);
+                Logger.TraceWarning(message);
+
+                process.StandardInput.WriteLine("\x3"); // try ctrl-c first
+                process.StandardInput.Close();
+                completed = process.WaitForExit(200);
+
+                message = "Timedout! Sent <ctrl-c>" + (completed ? "; stopped" : "; trying Kill()");
+                Logger.LogWarning(message);
+                Logger.TraceWarning(message);
+
+                if (!completed)
+                {
+                    process.Kill();
+                    var killed = process.HasExited ? "Done." : "Failed!";
+
+                    message = $"Timedout! Killing process ({name})... {killed}";
+                    Logger.LogWarning(message);
+                    Logger.TraceWarning(message);
+                }
+            }
+
+            return completed;
+        }
+
+        private static string GetStartInfo(out string startProcess, string cli, string command, string script, List<KeyValuePair<string, string>> kvs, string expect, string notExpect, ref List<string> files)
+        {
+            startProcess = FindCacheCli(cli);
 
             var isCommand = !string.IsNullOrEmpty(command) || string.IsNullOrEmpty(script);
             if (isCommand)
@@ -442,9 +680,10 @@ namespace TestAdapterTest
             return args.ToString().TrimEnd();
         }
 
-        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string command, string script, string @foreach, string arguments, string expect, string notExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
+        private static TestOutcome SimulateTestCase(TestCase test, string simulate, string cli, string command, string script, string @foreach, string arguments, string expect, string notExpect, string workingDirectory, out string stdOut, out string stdErr, out string errorMessage, out string stackTrace, out string additional, out string debugTrace)
         {
             var sb = new StringBuilder();
+            sb.AppendLine($"cli='{cli?.Replace("\n", "\\n")}'");
             sb.AppendLine($"command='{command?.Replace("\n", "\\n")}'");
             sb.AppendLine($"script='{script?.Replace("\n", "\\n")}'");
             sb.AppendLine($"foreach='{@foreach?.Replace("\n", "\\n")}'");
@@ -554,5 +793,7 @@ namespace TestAdapterTest
         }
 
         #endregion
+
+        private static Dictionary<string, string> _cliCache = new Dictionary<string, string>();
     }
 }

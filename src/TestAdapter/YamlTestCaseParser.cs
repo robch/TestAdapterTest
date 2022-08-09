@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -54,6 +54,7 @@ namespace TestAdapterTest
         private static IEnumerable<TestCase> TestCasesFromYamlStream(string source, FileInfo file, string area, YamlStream parsed)
         {
             var tests = new List<TestCase>();
+            var defaultTags = GetDefaultTags(file.Directory);
             foreach (var document in parsed?.Documents)
             {
                 var fromDocument = TestCasesFromYamlNode(source, file, document.RootNode, area, defaultClassName, defaultTags);
@@ -80,7 +81,7 @@ namespace TestAdapterTest
             var test = GetTestFromNode(source, file, mapping, area, @class, tags);
             if (test != null)
             {
-                return new[]{ test };
+                return new[] { test };
             }
 
             return null;
@@ -108,6 +109,12 @@ namespace TestAdapterTest
             string simulate = GetScalarString(mapping, "simulate");
             var simulating = !string.IsNullOrEmpty(simulate);
 
+            string cli = GetScalarString(mapping, "cli");
+            if (cli == null && tags.ContainsKey("cli"))
+            {
+                cli = tags["cli"].Last();
+            }
+
             string command = GetScalarString(mapping, "command");
             string script = GetScalarString(mapping, "script");
 
@@ -132,11 +139,15 @@ namespace TestAdapterTest
                 LineNumber = mapping.Start.Line
             };
 
+            SetTestCaseProperty(test, "cli", cli);
             SetTestCaseProperty(test, "command", command);
             SetTestCaseProperty(test, "script", script);
             SetTestCaseProperty(test, "simulate", simulate);
 
-            string workingDirectory = GetScalarString(mapping, "workingDirectory") ?? file.DirectoryName;
+            var timeout = GetScalarString(mapping, "timeout") ?? YamlTestAdapter.DefaultTimeout;
+            SetTestCaseProperty(test, "timeout", timeout);
+
+            var workingDirectory = GetScalarString(mapping, "workingDirectory") ?? file.DirectoryName;
             SetTestCaseProperty(test, "working-directory", workingDirectory);
 
             SetTestCasePropertyMap(test, "foreach", mapping, "foreach", workingDirectory);
@@ -160,7 +171,7 @@ namespace TestAdapterTest
 
             @class = GetScalarString(mapping, "class", @class);
             area = UpdateArea(mapping, area);
-            tags = UpdateCopyTags (tags, mapping);
+            tags = UpdateCopyTags(tags, mapping);
 
             return TestCasesFromYamlSequence(source, file, sequence, area, @class, tags);
         }
@@ -181,7 +192,7 @@ namespace TestAdapterTest
 
         private static bool IsValidTestCaseNode(string value)
         {
-            return ";area;class;name;command;script;foreach;arguments;expect;not-expect;simulate;tag;tags;".IndexOf($";{value};") >= 0;
+            return ";area;class;name;cli;command;script;timeout;foreach;arguments;expect;not-expect;simulate;tag;tags;".IndexOf($";{value};") >= 0;
         }
 
         private static void SetTestCaseProperty(TestCase test, string propertyName, YamlMappingNode mapping, string mappingName)
@@ -249,7 +260,7 @@ namespace TestAdapterTest
                 var combinedKey = new YamlScalarNode(string.Join("\t", keys));
                 var combinedValue = new YamlScalarNode(string.Join("\n", values));
                 var combinedKv = new KeyValuePair<YamlNode, YamlNode>(combinedKey, combinedValue);
-                kvs = new List<KeyValuePair<YamlNode, YamlNode>>(new[]{ combinedKv });
+                kvs = new List<KeyValuePair<YamlNode, YamlNode>>(new[] { combinedKv });
             }
 
             SetTestCasePropertyMap(test, propertyName, kvs);
@@ -309,22 +320,22 @@ namespace TestAdapterTest
         private static bool TryGetFileContentFromScalar(string scalar, string workingDirectory, out string fileContent)
         {
             // Treat this scalar value as file if it starts with '@' and does not have InvalidFileNameChars
-            if (scalar.StartsWith("@")  && Path.GetFileName(scalar).IndexOfAny(Path.GetInvalidFileNameChars()) == -1)
+            if (scalar.StartsWith("@") && Path.GetFileName(scalar).IndexOfAny(Path.GetInvalidFileNameChars()) == -1)
             {
                 var fileName = scalar.Substring(1);
-                
+
                 // check if the file already exists
                 var filePath = fileName;
                 if (!File.Exists(filePath))
                 {
                     filePath = Path.Combine(workingDirectory, fileName);
                 }
-                
+
                 Logger.Log($"YamlTestCaseParser.TryGetFileContentFromScalar: Read file contents from {filePath}");
                 if (File.Exists(filePath))
                 {
                     fileContent = File.ReadAllText(filePath);
-                    return true;                    
+                    return true;
                 }
             }
 
@@ -400,6 +411,37 @@ namespace TestAdapterTest
         private static string GetFullyQualifiedName(string area, string @class, string name)
         {
             return $"{area}.{@class}.{name}";
+        }
+
+        private static string GetYamlDefaultsFullFileName(DirectoryInfo directory)
+        {
+            var found = directory.GetFiles(YamlTestAdapter.YamlDefaultsFileName);
+            return found.Length == 1
+                ? found[0].FullName
+                : directory.Parent != null
+                    ? GetYamlDefaultsFullFileName(directory.Parent)
+                    : null;
+        }
+
+        private static Dictionary<string, List<string>> GetDefaultTags(DirectoryInfo directory)
+        {
+            var defaultTags = new Dictionary<string, List<string>>();
+
+            var defaultsFile = GetYamlDefaultsFullFileName(directory);
+            if (defaultsFile != null)
+            {
+                var parsed = ParseYamlStream(defaultsFile);
+                if (parsed.Documents.Count() > 0)
+                {
+                    var tagsNode = parsed.Documents[0].RootNode;
+                    if (tagsNode != null)
+                    {
+                        defaultTags = UpdateCopyTags(defaultTags, null, tagsNode);
+                    }
+                }
+            }
+
+            return defaultTags;
         }
 
         private static Dictionary<string, List<string>> UpdateCopyTags(Dictionary<string, List<string>> tags, YamlMappingNode mapping)
@@ -497,7 +539,6 @@ namespace TestAdapterTest
         }
 
         private const string defaultClassName = "TestCases";
-        private static readonly Dictionary<string, List<string>> defaultTags = new Dictionary<string, List<string>>();
 
         #endregion
     }

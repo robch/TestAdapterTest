@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -130,6 +130,6 @@ namespace TestAdapterTest
             tsv = tsv.Replace('\n', '\f');
             Logger.Log($"YamlNodeExtensions.ConvertScalarMapToTsvString: tsv='{tsv}'");
             return tsv;
-        }
+        }  
     }
 }
