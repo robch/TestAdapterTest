@@ -17,11 +17,12 @@ parameters:
   - 'Release'
 - name: 'SPXBuild_id'
   type: number
-  default: 26892775
+  default: 29829141
   values:
   - 0
   - 26843578
   - 26892775
+  - 29829141
 - name: testFilter
   displayName: Test Filter
   type: string
@@ -38,6 +39,7 @@ jobs:
     # INSTALL DEPENDENCIES (GStreamer)
     # -----------------------------------------------------------------------------
     - script: |
+        sudo apt-get update &
         sudo apt install libgstreamer1.0-0 \
         gstreamer1.0-plugins-base \
         gstreamer1.0-plugins-good \
