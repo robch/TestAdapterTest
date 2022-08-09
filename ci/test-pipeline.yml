@@ -39,7 +39,7 @@ jobs:
     # INSTALL DEPENDENCIES (GStreamer)
     # -----------------------------------------------------------------------------
     - script: |
-        sudo apt-get update &
+        sudo apt-get update --fix-missing &
         sudo apt install libgstreamer1.0-0 \
         gstreamer1.0-plugins-base \
         gstreamer1.0-plugins-good \
