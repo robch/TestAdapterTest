@@ -86,7 +86,8 @@ namespace TestAdapterTest
 
         private static IEnumerable<FileInfo> FindFiles(DirectoryInfo directory)
         {
-            return directory.GetFiles($"*{FileExtensionYaml}", SearchOption.AllDirectories);
+            return directory.GetFiles($"*{FileExtensionYaml}", SearchOption.AllDirectories)
+                .Where(file => file.Name != YamlDefaultsFileName);
         }
 
         private static IEnumerable<TestCase> GetTestsFromYaml(string source, FileInfo file)
@@ -99,10 +100,25 @@ namespace TestAdapterTest
            Logger.Log($"YamlTestAdapter.GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
         }
 
+        private static bool IsTrait(Trait trait, string check)
+        {
+            return trait.Name == check || trait.Value == check;
+        }
+
         private static IEnumerable<TestCase> FilterTestCases(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             Logger.Log($"YamlTestAdapter.FilterTestCases()");
-            return YamlTestCaseFilter.FilterTestCases(tests, runContext, frameworkHandle);
+
+            tests = YamlTestCaseFilter.FilterTestCases(tests, runContext, frameworkHandle);
+            
+            var before = tests.Where(test => test.Traits.Count(x => IsTrait(x, "before")) > 0);
+            var after = tests.Where(test => test.Traits.Count(x => IsTrait(x, "after")) > 0);
+            var middle = tests.Where(test => !before.Contains(test) && !after.Contains(test));
+
+            tests = before.Concat(middle).Concat(after);
+            Logger.Log("YamlTestAdapter.FilterTestCases() ==> {string.Join('\n', tests.Select(x => x.Name))}");
+
+            return tests;
         }
 
         private static TestOutcome RunAndRecordTestCase(TestCase test, IFrameworkHandle frameworkHandle)
@@ -117,6 +133,11 @@ namespace TestAdapterTest
         public const string FileExtensionDll = ".dll";
         public const string FileExtensionYaml = ".yaml";
         public const string Executor = "executor://spx/yaml/VsTestRunner1";
+        #endregion
+
+        #region other constants
+        public const string YamlDefaultsFileName = "Azure-AI-CLI-TestRunner-Defaults.yaml";
+        public const string DefaultTimeout = "600000";
         #endregion
     }
 }

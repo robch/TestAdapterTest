@@ -178,6 +178,18 @@
             - endpoint: 'wss://...'
         simulate: passed
       
+      - name: Test with {file} in {region}
+        command: recognize
+        foreach:
+          ? [file, expect]
+          : '@inputs.tsv'
+          ? [region, Token, endpoint]
+          : - [westus, '@westus.token', '']
+            - [eastus, '@eastus.token']
+            - ['', '', 'wss://...']
+            - endpoint: 'wss://...'
+        simulate: passed
+      
       - name: from file with key
         command: recognize
         foreach:

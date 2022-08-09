@@ -130,6 +130,6 @@ namespace TestAdapterTest
             tsv = tsv.Replace('\n', '\f');
             Logger.Log($"YamlNodeExtensions.ConvertScalarMapToTsvString: tsv='{tsv}'");
             return tsv;
-        }
+        }  
     }
 }

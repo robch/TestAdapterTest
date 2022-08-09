@@ -47,6 +47,7 @@ namespace TestAdapterTest
                 case "fqn":
                 case "fullyqualifiedname": return test.FullyQualifiedName;
 
+                case "cli": return YamlTestProperties.Get(test, "cli");
                 case "command": return YamlTestProperties.Get(test, "command");
                 case "script": return YamlTestProperties.Get(test, "script");
 
@@ -58,6 +59,7 @@ namespace TestAdapterTest
 
                 case "simulate": return YamlTestProperties.Get(test, "simulate");
 
+                case "timeout": return YamlTestProperties.Get(test, "timeout");
                 case "working-directory": return YamlTestProperties.Get(test, "working-directory");
             }
 
@@ -67,6 +69,6 @@ namespace TestAdapterTest
             return tags.Select(x => x.Value).ToArray();
         }
 
-        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName", "Category", "command", "script", "foreach", "arguments", "expect", "not-expect", "simulate" };
+        private static readonly string[] supportedFilterProperties = { "DisplayName", "FullyQualifiedName", "Category", "cli", "command", "script", "foreach", "arguments", "expect", "not-expect", "simulate" };
     }
 }

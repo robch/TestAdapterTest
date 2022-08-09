@@ -7,20 +7,39 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="$(LocalTestsPath)\*.yaml">
-      <Link>tests\%(Filename)%(Extension)</Link>
+    <Content Include="$(LocalTestsPath)\spx\*.yaml">
+      <Link>tests\spx\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(LocalTestsPath)\spx\*.tsv">
+      <Link>tests\spx\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(LocalTestsPath)\spx\*.txt">
+      <Link>tests\spx\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="$(LocalTestsPath)\spx\*.zip">
+      <Link>tests\spx\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="$(LocalTestsPath)\vz\*.yaml">
+      <Link>tests\vz\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(LocalTestsPath)\*.tsv">
-      <Link>tests\%(Filename)%(Extension)</Link>
+      <Link>tests\vz\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(LocalTestsPath)\*.txt">
-      <Link>tests\%(Filename)%(Extension)</Link>
+      <Link>tests\vz\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="$(LocalTestsPath)\*.zip">
-      <Link>tests\%(Filename)%(Extension)</Link>
+      <Link>tests\vz\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
