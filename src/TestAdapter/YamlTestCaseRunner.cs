@@ -60,7 +60,7 @@ namespace TestAdapterTest
         {
             Logger.Log($"YamlTestCaseRunner.TestCaseGetResults: ENTER");
 
-            var cli = YamlTestProperties.Get(test, "cli");
+            var cli = YamlTestProperties.Get(test, "cli") ?? "";
             var command = YamlTestProperties.Get(test, "command");
             var script = YamlTestProperties.Get(test, "script");
             var @foreach = YamlTestProperties.Get(test, "foreach");
