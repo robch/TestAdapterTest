@@ -432,7 +432,16 @@ namespace TestAdapterTest
 
             foreach (var item in paths)
             {
-                var checkExe = Directory.GetFiles(item, exe, SearchOption.AllDirectories).FirstOrDefault();
+                string checkExe = string.Empty;
+                try 
+                {
+                    checkExe = Directory.GetFiles(item, exe, SearchOption.AllDirectories).FirstOrDefault();
+                }
+                catch(Exception) 
+                {
+                    // ignore
+                }
+
                 if (checkExe != null && File.Exists(checkExe))
                 {
                     // Logger.TraceInfo($"FindCliOrNull: Found CLI: {checkExe}");
