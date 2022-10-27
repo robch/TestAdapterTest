@@ -1,9 +1,8 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 
@@ -72,7 +71,7 @@ namespace TestAdapterTest
                 // ensure each item is either scalar, or sequence of scalar                
                 var invalidItem = (line == null);
                 Logger.LogIf(invalidItem, $"Invalid item at ({item.Start.Line},{item.Start.Column})");
-                if (invalidItem) return null; 
+                if (invalidItem) return null;
 
                 lines.Add(line);
             }
@@ -130,6 +129,6 @@ namespace TestAdapterTest
             tsv = tsv.Replace('\n', '\f');
             Logger.Log($"YamlNodeExtensions.ConvertScalarMapToTsvString: tsv='{tsv}'");
             return tsv;
-        }  
+        }
     }
 }

@@ -11,7 +11,7 @@ namespace TestAdapterTest
 
         public static TestRunHost FromSources(IEnumerable<string> sources) => new TestRunHost(sources);
 
-        public TestRunHost(IEnumerable<string> sources)
+        private TestRunHost(IEnumerable<string> sources)
         {
             if (sources == null) return; // nothing to do
 
