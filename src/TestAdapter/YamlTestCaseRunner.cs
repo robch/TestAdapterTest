@@ -437,7 +437,7 @@ namespace TestAdapterTest
                 {
                     checkExe = Directory.GetFiles(item, exe, SearchOption.AllDirectories).FirstOrDefault();
                 }
-                catch(DirectoryNotFoundException) 
+                catch(Exception) 
                 {
                     // ignore
                 }
