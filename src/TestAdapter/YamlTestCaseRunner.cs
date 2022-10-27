@@ -435,14 +435,17 @@ namespace TestAdapterTest
                 string checkExe = string.Empty;
                 try 
                 {
-                    checkExe = Directory.GetFiles(item, exe, SearchOption.AllDirectories).FirstOrDefault();
+                    var search = item == path2 || item == path3 ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+                    checkExe = Directory.GetFiles(item, exe, search).FirstOrDefault();
                 }
-                catch(Exception) 
+                catch(UnauthorizedAccessException)
                 {
-                    // ignore
+                }
+                catch(DirectoryNotFoundException)
+                {
                 }
 
-                if (checkExe != null && File.Exists(checkExe))
+                if (checkExe != null && !Directory.Exists(checkExe) && File.Exists(checkExe))
                 {
                     // Logger.TraceInfo($"FindCliOrNull: Found CLI: {checkExe}");
                     var checkDll = FindCliDllOrNull(checkExe, dll);
