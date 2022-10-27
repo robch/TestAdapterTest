@@ -1,15 +1,10 @@
-﻿using Microsoft.VisualStudio.TestPlatform.ObjectModel;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 
 namespace TestAdapterTest
 {
@@ -32,10 +27,10 @@ namespace TestAdapterTest
 
         public static IEnumerable<TestCase> GetTestsFromFile(string source)
         {
-           Logger.Log($"YamlTestAdapter.GetTestsFromFile('{source}')");
+            Logger.Log($"YamlTestAdapter.GetTestsFromFile('{source}')");
 
-           var file = new FileInfo(source);
-           Logger.Log($"YamlTestAdapter.GetTestsFromFile('{source}'): Extension={file.Extension}");
+            var file = new FileInfo(source);
+            Logger.Log($"YamlTestAdapter.GetTestsFromFile('{source}'): Extension={file.Extension}");
 
             return file.Extension.Trim('.') == FileExtensionYaml.Trim('.')
                 ? GetTestsFromYaml(source, file)
@@ -81,7 +76,7 @@ namespace TestAdapterTest
                     yield return test;
                 }
             }
-           Logger.Log($"YamlTestAdapter.GetTestsFromDirectory('{source}', '{directory.FullName}'): EXIT");
+            Logger.Log($"YamlTestAdapter.GetTestsFromDirectory('{source}', '{directory.FullName}'): EXIT");
         }
 
         private static IEnumerable<FileInfo> FindFiles(DirectoryInfo directory)
@@ -97,7 +92,7 @@ namespace TestAdapterTest
             {
                 yield return test;
             }
-           Logger.Log($"YamlTestAdapter.GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
+            Logger.Log($"YamlTestAdapter.GetTestsFromYaml('{source}', '{file.FullName}'): EXIT");
         }
 
         private static bool IsTrait(Trait trait, string check)
@@ -110,7 +105,7 @@ namespace TestAdapterTest
             Logger.Log($"YamlTestAdapter.FilterTestCases()");
 
             tests = YamlTestCaseFilter.FilterTestCases(tests, runContext, frameworkHandle);
-            
+
             var before = tests.Where(test => test.Traits.Count(x => IsTrait(x, "before")) > 0);
             var after = tests.Where(test => test.Traits.Count(x => IsTrait(x, "after")) > 0);
             var middle = tests.Where(test => !before.Contains(test) && !after.Contains(test));
