@@ -16,6 +16,8 @@ namespace TestAdapterTest
         {
             try
             {
+                using var _ = TestRunHost.FromSources(sources);
+
                 Logger.Log(logger);
                 Logger.Log($"TestDiscoverer.DiscoverTests(): ENTER");
                 Logger.Log($"TestDiscoverer.DiscoverTests(): count={sources.Count()}");
