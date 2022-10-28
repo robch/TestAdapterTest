@@ -433,7 +433,7 @@ namespace TestAdapterTest
             foreach (var item in paths)
             {
                 string checkExe = string.Empty;
-                try 
+                try
                 {
                     var search = item == path2 || item == path3 ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
                     checkExe = Directory.GetFiles(item, exe, search).FirstOrDefault();
@@ -568,6 +568,7 @@ namespace TestAdapterTest
 
                 path = AddToPath(path, cliPath, locations);
 
+                startInfo.Environment.Add("PATH", AddToPath(Environment.GetEnvironmentVariable("PATH"), cliPath));
                 startInfo.Environment.Add(pathVar, path);
                 Logger.LogInfo($"UpdatePathEnvironment: {pathVar}={path}");
             }
