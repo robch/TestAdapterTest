@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Logging;
 
 namespace TestAdapterTest
@@ -27,17 +28,32 @@ namespace TestAdapterTest
 
         public static void LogInfo(string text)
         {
-            File.AppendAllText(_logPath, $"{DateTime.Now}: INFO: {text}\n");
+            using (var mutex = new Mutex(false, "Logger Mutex"))
+            {
+                mutex.WaitOne();
+                File.AppendAllText(_logPath, $"{DateTime.Now}: INFO: {text}\n");
+                mutex.ReleaseMutex();
+            }
         }
 
         public static void LogWarning(string text)
         {
-            File.AppendAllText(_logPath, $"{DateTime.Now}: WARNING: {text}\n");
+            using (var mutex = new Mutex(false, "Logger Mutex"))
+            {
+                mutex.WaitOne();
+                File.AppendAllText(_logPath, $"{DateTime.Now}: WARNING: {text}\n");
+                mutex.ReleaseMutex();
+            }
         }
 
         public static void LogError(string text)
         {
-            File.AppendAllText(_logPath, $"{DateTime.Now}: ERROR: {text}\n");
+            using (var mutex = new Mutex(false, "Logger Mutex"))
+            {
+                mutex.WaitOne();
+                File.AppendAllText(_logPath, $"{DateTime.Now}: ERROR: {text}\n");
+                mutex.ReleaseMutex();
+            }
         }
 
         #endregion
