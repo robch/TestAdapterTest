@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 
@@ -47,26 +48,23 @@ namespace TestAdapterTest
             foreach (var testSet in FilterTestCases(tests, runContext, frameworkHandle))
             {
                 if (!testSet.Any()) continue;
-                var tasks = new List<Task>();
-                var taskQueue = new System.Collections.Concurrent.ConcurrentQueue<TestCase>(testSet);
-                for (int i = 0; i < parallelWorkers; i++)
+                var parallelTestSet = testSet.Where(test => YamlTestProperties.Get(test, "parallelize") == "true");
+                var nonParallelTestSet = testSet.Where(test => YamlTestProperties.Get(test, "parallelize") != "true");
+
+                var workerBlock = new ActionBlock<TestCase>(
+                    test => RunAndRecordTestCase(test, frameworkHandle),
+                    new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = parallelWorkers });
+                foreach (var test in parallelTestSet)
                 {
-                    tasks.Add(Task.Factory.StartNew(
-                        () =>
-                        {
-                            while (!taskQueue.IsEmpty)
-                            {
-                                if (taskQueue.TryDequeue(out TestCase test))
-                                {
-                                    RunAndRecordTestCase(test, frameworkHandle);
-                                }
-                            }
-                        },
-                        CancellationToken.None,
-                        TaskCreationOptions.LongRunning,
-                        TaskScheduler.Default));
+                    workerBlock.Post(test);
                 }
-                Task.WaitAll(tasks.ToArray());
+                workerBlock.Complete();
+                workerBlock.Completion.Wait();
+
+                foreach (var test in nonParallelTestSet)
+                {
+                    RunAndRecordTestCase(test, frameworkHandle);
+                }
             }
         }
 
