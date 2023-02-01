@@ -43,6 +43,7 @@ namespace TestAdapterTest
         public static void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             var parallelWorkers = Environment.ProcessorCount;
+            Logger.Log($"YamlTestAdapter.RunTests(): {parallelWorkers} parallel Workers");
             // Must run before, middle, and after testSets in certain order so cannot parallelize those
             // Can parallelize tests within each testSet
             foreach (var testSet in FilterTestCases(tests, runContext, frameworkHandle))
