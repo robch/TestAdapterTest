@@ -32,6 +32,7 @@ namespace TestAdapterTest
             { "cli", RegisterTestCaseProperty("CLI") },
             { "command", RegisterTestCaseProperty("Command") },
             { "script", RegisterTestCaseProperty("Script") },
+            { "parallelize", RegisterTestCaseProperty("Parallelize") },
             { "foreach", RegisterTestCaseProperty("ForEach") },
             { "arguments", RegisterTestCaseProperty("Arguments") },
             { "expect", RegisterTestCaseProperty("Expect") },

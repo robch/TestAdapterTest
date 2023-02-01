@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks.Dataflow;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.Adapter;
 
@@ -39,9 +40,30 @@ namespace TestAdapterTest
 
         public static void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            foreach (var test in FilterTestCases(tests, runContext, frameworkHandle))
+            var parallelWorkers = Environment.ProcessorCount;
+            Logger.Log($"YamlTestAdapter.RunTests(): {parallelWorkers} parallel Workers");
+            // Must run before, middle, and after testSets in certain order so cannot parallelize those
+            // Can parallelize tests within each testSet
+            foreach (var testSet in FilterTestCases(tests, runContext, frameworkHandle))
             {
-                RunAndRecordTestCase(test, frameworkHandle);
+                if (!testSet.Any()) continue;
+                var parallelTestSet = testSet.Where(test => YamlTestProperties.Get(test, "parallelize") == "true");
+                var nonParallelTestSet = testSet.Where(test => YamlTestProperties.Get(test, "parallelize") != "true");
+
+                var workerBlock = new ActionBlock<TestCase>(
+                    test => RunAndRecordTestCase(test, frameworkHandle),
+                    new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = parallelWorkers });
+                foreach (var test in parallelTestSet)
+                {
+                    workerBlock.Post(test);
+                }
+                workerBlock.Complete();
+                workerBlock.Completion.Wait();
+
+                foreach (var test in nonParallelTestSet)
+                {
+                    RunAndRecordTestCase(test, frameworkHandle);
+                }
             }
         }
 
@@ -100,7 +122,7 @@ namespace TestAdapterTest
             return trait.Name == check || trait.Value == check;
         }
 
-        private static IEnumerable<TestCase> FilterTestCases(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
+        private static IEnumerable<IEnumerable<TestCase>> FilterTestCases(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
             Logger.Log($"YamlTestAdapter.FilterTestCases()");
 
@@ -110,10 +132,10 @@ namespace TestAdapterTest
             var after = tests.Where(test => test.Traits.Count(x => IsTrait(x, "after")) > 0);
             var middle = tests.Where(test => !before.Contains(test) && !after.Contains(test));
 
-            tests = before.Concat(middle).Concat(after);
+            var testsList = new List<IEnumerable<TestCase>> { before, middle, after };
             Logger.Log("YamlTestAdapter.FilterTestCases() ==> {string.Join('\n', tests.Select(x => x.Name))}");
 
-            return tests;
+            return testsList;
         }
 
         private static TestOutcome RunAndRecordTestCase(TestCase test, IFrameworkHandle frameworkHandle)

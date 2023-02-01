@@ -52,30 +52,35 @@ namespace TestAdapterTest
         {
             var tests = new List<TestCase>();
             var defaultTags = GetDefaultTags(file.Directory);
+            var parallelize = "false";
+            if (defaultTags.ContainsKey("parallelize"))
+            {
+                parallelize = defaultTags["parallelize"].Last();
+            }
             foreach (var document in parsed?.Documents)
             {
-                var fromDocument = TestCasesFromYamlNode(source, file, document.RootNode, area, defaultClassName, defaultTags);
+                var fromDocument = TestCasesFromYamlNode(source, file, document.RootNode, area, defaultClassName, defaultTags, parallelize);
                 tests.AddRange(fromDocument);
             }
             return tests;
         }
 
-        private static IEnumerable<TestCase> TestCasesFromYamlNode(string source, FileInfo file, YamlNode node, string area, string @class, Dictionary<string, List<string>> tags)
+        private static IEnumerable<TestCase> TestCasesFromYamlNode(string source, FileInfo file, YamlNode node, string area, string @class, Dictionary<string, List<string>> tags, string parallelize)
         {
             return node is YamlMappingNode
-                ? TestCasesFromYamlMapping(source, file, node as YamlMappingNode, area, @class, tags)
-                : TestCasesFromYamlSequence(source, file, node as YamlSequenceNode, area, @class, tags);
+                ? TestCasesFromYamlMapping(source, file, node as YamlMappingNode, area, @class, tags, parallelize)
+                : TestCasesFromYamlSequence(source, file, node as YamlSequenceNode, area, @class, tags, parallelize);
         }
 
-        private static IEnumerable<TestCase> TestCasesFromYamlMapping(string source, FileInfo file, YamlMappingNode mapping, string area, string @class, Dictionary<string, List<string>> tags)
+        private static IEnumerable<TestCase> TestCasesFromYamlMapping(string source, FileInfo file, YamlMappingNode mapping, string area, string @class, Dictionary<string, List<string>> tags, string parallelize)
         {
-            var children = CheckForChildren(source, file, mapping, area, @class, tags);
+            var children = CheckForChildren(source, file, mapping, area, @class, tags, parallelize);
             if (children != null)
             {
                 return children;
             }
 
-            var test = GetTestFromNode(source, file, mapping, area, @class, tags);
+            var test = GetTestFromNode(source, file, mapping, area, @class, tags, parallelize);
             if (test != null)
             {
                 return new[] { test };
@@ -84,14 +89,14 @@ namespace TestAdapterTest
             return null;
         }
 
-        private static IEnumerable<TestCase> TestCasesFromYamlSequence(string source, FileInfo file, YamlSequenceNode sequence, string area, string @class, Dictionary<string, List<string>> tags)
+        private static IEnumerable<TestCase> TestCasesFromYamlSequence(string source, FileInfo file, YamlSequenceNode sequence, string area, string @class, Dictionary<string, List<string>> tags, string parallelize)
         {
             var tests = new List<TestCase>();
             if (sequence == null) return tests;
 
             foreach (YamlMappingNode mapping in sequence.Children)
             {
-                var fromMapping = TestCasesFromYamlMapping(source, file, mapping, area, @class, tags);
+                var fromMapping = TestCasesFromYamlMapping(source, file, mapping, area, @class, tags, parallelize);
                 if (fromMapping != null)
                 {
                     tests.AddRange(fromMapping);
@@ -101,7 +106,7 @@ namespace TestAdapterTest
             return tests;
         }
 
-        private static TestCase GetTestFromNode(string source, FileInfo file, YamlMappingNode mapping, string area, string @class, Dictionary<string, List<string>> tags)
+        private static TestCase GetTestFromNode(string source, FileInfo file, YamlMappingNode mapping, string area, string @class, Dictionary<string, List<string>> tags, string parallelize)
         {
             string simulate = GetScalarString(mapping, "simulate");
             var simulating = !string.IsNullOrEmpty(simulate);
@@ -111,6 +116,9 @@ namespace TestAdapterTest
             {
                 cli = tags["cli"].Last();
             }
+
+            string currentParallelize = GetScalarString(mapping, "parallelize");
+            parallelize = currentParallelize == null ? parallelize : currentParallelize;
 
             string command = GetScalarString(mapping, "command");
             string script = GetScalarString(mapping, "script");
@@ -140,6 +148,7 @@ namespace TestAdapterTest
             SetTestCaseProperty(test, "command", command);
             SetTestCaseProperty(test, "script", script);
             SetTestCaseProperty(test, "simulate", simulate);
+            SetTestCaseProperty(test, "parallelize", parallelize);
 
             var timeout = GetScalarString(mapping, "timeout") ?? YamlTestAdapter.DefaultTimeout;
             SetTestCaseProperty(test, "timeout", timeout);
@@ -159,7 +168,7 @@ namespace TestAdapterTest
             return test;
         }
 
-        private static IEnumerable<TestCase> CheckForChildren(string source, FileInfo file, YamlMappingNode mapping, string area, string @class, Dictionary<string, List<string>> tags)
+        private static IEnumerable<TestCase> CheckForChildren(string source, FileInfo file, YamlMappingNode mapping, string area, string @class, Dictionary<string, List<string>> tags, string parallelize)
         {
             var sequence = mapping.Children.ContainsKey("tests")
                 ? mapping.Children["tests"] as YamlSequenceNode
@@ -169,8 +178,9 @@ namespace TestAdapterTest
             @class = GetScalarString(mapping, "class", @class);
             area = UpdateArea(mapping, area);
             tags = UpdateCopyTags(tags, mapping);
+            parallelize = GetParallelizeTag(mapping, parallelize);
 
-            return TestCasesFromYamlSequence(source, file, sequence, area, @class, tags);
+            return TestCasesFromYamlSequence(source, file, sequence, area, @class, tags, parallelize);
         }
 
         private static void CheckInvalidTestCaseNodes(FileInfo file, YamlMappingNode mapping, TestCase test)
@@ -189,7 +199,7 @@ namespace TestAdapterTest
 
         private static bool IsValidTestCaseNode(string value)
         {
-            return ";area;class;name;cli;command;script;timeout;foreach;arguments;expect;not-expect;simulate;tag;tags;".IndexOf($";{value};") >= 0;
+            return ";area;class;name;cli;command;script;timeout;foreach;arguments;expect;not-expect;simulate;tag;tags;parallelize;".IndexOf($";{value};") >= 0;
         }
 
         private static void SetTestCaseProperty(TestCase test, string propertyName, YamlMappingNode mapping, string mappingName)
@@ -439,6 +449,12 @@ namespace TestAdapterTest
             }
 
             return defaultTags;
+        }
+
+        private static string GetParallelizeTag(YamlMappingNode mapping, string currentParallelize)
+        {
+            var parallelizeNode = mapping.Children.ContainsKey("parallelize") ? mapping.Children["parallelize"] : null;
+            return (parallelizeNode == null) ? currentParallelize : (parallelizeNode as YamlScalarNode)?.Value;
         }
 
         private static Dictionary<string, List<string>> UpdateCopyTags(Dictionary<string, List<string>> tags, YamlMappingNode mapping)
