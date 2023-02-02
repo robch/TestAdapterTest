@@ -108,7 +108,8 @@ namespace TestAdapterTest
         {
             var pid = Process.GetCurrentProcess().Id.ToString();
             var time = DateTime.Now.ToFileTime().ToString();
-            return $"log-test-adatper-{time}-{pid}.log";
+            Directory.CreateDirectory("./logs");
+            return $"./logs/log-test-adapter-{time}-{pid}.log";
         }
 
         private static IMessageLogger logger = null;
