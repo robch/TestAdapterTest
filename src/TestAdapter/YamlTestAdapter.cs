@@ -11,6 +11,7 @@ namespace TestAdapterTest
 {
     public class YamlTestAdapter
     {
+        private static readonly int maxDegreeOfParallelism = 10;
         public static IEnumerable<TestCase> GetTestsFromFiles(IEnumerable<string> sources)
         {
             Logger.Log($"YamlTestAdapter.GetTestsFromFiles(source.Count={sources.Count()})");
@@ -40,8 +41,7 @@ namespace TestAdapterTest
 
         public static void RunTests(IEnumerable<TestCase> tests, IRunContext runContext, IFrameworkHandle frameworkHandle)
         {
-            var parallelWorkers = Environment.ProcessorCount;
-            Logger.Log($"YamlTestAdapter.RunTests(): {parallelWorkers} parallel Workers");
+            Logger.Log($"YamlTestAdapter.RunTests(): {maxDegreeOfParallelism} parallel Workers");
             // Must run before, middle, and after testSets in certain order so cannot parallelize those
             // Can parallelize tests within each testSet
             foreach (var testSet in FilterTestCases(tests, runContext, frameworkHandle))
@@ -52,7 +52,7 @@ namespace TestAdapterTest
 
                 var workerBlock = new ActionBlock<TestCase>(
                     test => RunAndRecordTestCase(test, frameworkHandle),
-                    new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = parallelWorkers });
+                    new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism });
                 foreach (var test in parallelTestSet)
                 {
                     workerBlock.Post(test);
